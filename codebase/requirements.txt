@@ -1,0 +1,9 @@
+pandas
+psycopg2
+matplotlib
+seaborn
+numpy
+scipy
+sklearn
+requests
+tqdm
