@@ -20,19 +20,23 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-def download_data(table):
+def download_data(table, limit=18446744073709551615):
     """
     Download data from wonen server, from specific table.
 
-    Table options: "adres", "zaken", "stadia".
+    Table options: "adres", "zaken", "stadia", "adres_periodes", "hotline_melding",
+                   "hotline_bevinding", "personen", "personen_huwelijk", e.a..
 
     """
 
-    # Open server connection.
-    conn = psycopg2.connect("EXAMPLE_LOGIN")
+    # Open right server connection.
+    if table in ['adres', 'zaken', 'stadia']:
+        conn = psycopg2.connect("EXAMPLE_LOGIN")
+    else:
+        conn = psycopg2.connect("EXAMPLE_LOGIN")
 
     # Create query to download specific table data from server.
-    sql = "select * from public.bwv_%s;" % table
+    sql = f"select * from public.bwv_%s limit %s;" % (table, limit)
 
     # Get data & convert to dataframe.
     df = sqlio.read_sql_query(sql, conn)
@@ -47,7 +51,7 @@ def download_data(table):
     return df
 
 
-def save_dfs(adres, zaken, stadia, version, dir="E:\\woonfraude\\data\\"):
+def save_dfs(adres, zaken, stadia, version, path="E:\\woonfraude\\data\\"):
     """Save a version of the given dataframes to dir."""
     adres.to_pickle("%sadres_%s.p" % (path, version))
     zaken.to_pickle("%szaken_%s.p" % (path, version))
@@ -55,7 +59,7 @@ def save_dfs(adres, zaken, stadia, version, dir="E:\\woonfraude\\data\\"):
     print("Dataframes saved as version \"%s\"." % version)
 
 
-def load_dfs(version, dir="E:\\woonfraude\\data\\"):
+def load_dfs(version, path="E:\\woonfraude\\data\\"):
     """Load a version of the dataframes from dir. Rename them (pickling removes name)."""
     adres = pd.read_pickle("%sadres_%s.p" % (path, version))
     zaken = pd.read_pickle("%szaken_%s.p" % (path, version))
@@ -249,6 +253,15 @@ def main():
     # Make snapshot of data
     save_dfs(adres, zaken, stadia, '2')
     '''
+
+    # Optionele downloads
+    adres_periodes = download_data("adres_periodes", 100)
+    hotline_melding = download_data("hotline_melding", 100)
+    hotline_bevinding = download_data("hotline_bevinding", 100)
+    personen = download_data("personen", 100)
+    personen_huwelijk = download_data("personen_huwelijk", 100)
+
+    q.d()
 
     adres, zaken, stadia = load_dfs('2')
 
