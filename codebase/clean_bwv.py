@@ -163,6 +163,7 @@ def add_binary_label_zaken(zaken, stadia):
     #         return False
 
     # Create a translation function from sta_oms and afs_oms to binary woonfraude label.
+    # TODO: weggooien
     def woonfraude_binary(x):
         r = stadia[stadia['zaak_id'] == x['zaak_id']]
         r = r.sort_values('sta_nr')
