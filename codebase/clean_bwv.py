@@ -1,3 +1,25 @@
+"""
+clean_bwv.py
+
+This script implements functions to download BWV data from the wonen servers, to clean this data,
+and to categorize it.
+
+Download:
+    - Download any tables in the bwv set.
+Cleaning:
+    - Removing entries with incorrect dates
+    - Transforming column data to the correct type
+
+Output: Cleaned and categorized/labeled BWV data
+        - ~40k adresses
+        - ~60k zaken
+        - ~veel stadia
+
+Written by Swaan Dekkers & Thomas Jongstra
+"""
+
+# Source this script bwv_cleaning_s_final.ipynb and fill_df_bwv_adres.ipynb.
+
 import pandas as pd
 import pandas.io.sql as sqlio
 import psycopg2
@@ -95,10 +117,57 @@ def fix_dates(df, cols):
     df[cols] = df[cols].apply(pd.to_datetime, errors='coerce')
 
 
-# TODO: Change function so it tries to do this for all columns (if containing text)?
+def fix_strings(df, cols):
+    """Convert columns containing string data to string type."""
+    df[cols] = df[cols].apply(pd.to_string, errors='coerce')
+    lower_strings(df, cols)
+
+
 def lower_strings(df, cols):
     """Convert all strings in given columns to lowercase."""
     df[cols] = df[cols].str.lower()
+
+
+def is_float(value):
+    """Helper function to check if a string can be cast to a float."""
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
+def auto_fix_data_types(df):
+    """Automatically detect data types of columns and fix their types."""
+
+    # Loop over all columns
+    for col in df.columns:
+
+        # Look at the first entry in the column to decide whether fixing could be succesful.
+        example = df[col][0]
+
+        # Detect/fix dates, if applicable based on first entry.
+        try:
+            if pd.to_datetime(example):
+                fix_dates(df, col)
+                break  # After fixing, break out of for-loop.
+        except ValueError:
+            pass
+
+        # Detect/fix integers, if applicable based on first entry.
+        if example.isdigit():
+            fix_integers(df, col)
+            break  # After fixing, break out of for-loop.
+
+        # Detect/fix floats, if applicable based on first entry.
+        if is_float(example):
+            fix_floats(df, col)
+            break # After fixing, break out of for-loop.
+
+        # Detect/fix strings (also cast to lowercast), if applicable based on first entry.
+        # Perform this fallback-operation when other data types were not detected.
+        fix_strings(df, col)
+
 
 
 def clean_dates(df):
@@ -213,15 +282,24 @@ def main():
     # adres = download_data('adres')
     # zaken = download_data('zaken')
     # stadia = download_data('stadia')
+    # # Name the dataframes
+    # name_dfs(adres, zaken, stadia)
+
     # save_dfs(adres, zaken, stadia, '1')
 
-    '''
+
     # Load previously downloaded snapshot of data.
     adres, zaken, stadia = load_dfs('1')
 
-    # Name the dataframes
-    name_dfs(adres, zaken, stadia)
 
+
+    # Automatisch kolommen casten naar timestamp/int/float/string
+    # TODO: dit lijkt te werken. Test nog even grondig!
+    adres_test = adres.loc[:100, :]
+    auto_fix_data_types(adres_test)
+    q.d()
+
+    '''
     # Adres
     fix_integers(adres, ['adres_id', 'straatcode', 'sbw_code', 'xref', 'yref',
                          'sbv_code', 'inwnrs', 'kmrs'])
