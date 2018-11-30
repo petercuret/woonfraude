@@ -26,8 +26,10 @@ import psycopg2
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import unicodedata
 import warnings
 import requests
+import random
 import timeit
 import pickle
 import time
@@ -40,6 +42,9 @@ from scipy import stats
 from IPython.core.interactiveshell import InteractiveShell
 from tqdm import tqdm
 tqdm.pandas()
+
+# Turn off pandas chained assignment warnings.
+pd.options.mode.chained_assignment = None  # default='warn'
 
 
 def download_data(table, limit=18446744073709551615):
@@ -97,77 +102,20 @@ def name_dfs(adres, zaken, stadia):
     stadia.name = 'stadia'
 
 
-def drop_duplicates(df, cols):
-    """Drop duplicates in dataframe based on given column values. Print results in terminal."""
-    before = df.shape[0]
-    df.drop_duplicates(subset = cols)
-    after = df.shape[0]
-    duplicates = before - after
-    print(f"Dataframe \"%s\": Dropped %s duplicates!" % (df.name, duplicates))
-
-
-def fix_integers(df, cols):
-    """Correctly set datatype to integer for several columns."""
-    df[cols] = df[cols].apply(pd.to_numeric, downcast='integer',
-                                                  errors='coerce')
+def lower_strings(df, cols=None):
+    """Convert all strings in given columns to lowercase. Type remains Object (Pandas standard)."""
+    if cols == None:  # By default, select all eligible columns perform string-lowering on.
+        cols = df.columns
+        cols = [col for col in cols if df[col].dtype == object]
+    for col in cols:
+        df[col] = df[col].str.lower()
+    print("Lowered strings of cols %s in df %s!" % (cols, df.name))
 
 
 def fix_dates(df, cols):
     """Convert columns containing dates to datetime objects)."""
     df[cols] = df[cols].apply(pd.to_datetime, errors='coerce')
-
-
-def fix_strings(df, cols):
-    """Convert columns containing string data to string type."""
-    df[cols] = df[cols].apply(pd.to_string, errors='coerce')
-    lower_strings(df, cols)
-
-
-def lower_strings(df, cols):
-    """Convert all strings in given columns to lowercase."""
-    df[cols] = df[cols].str.lower()
-
-
-def is_float(value):
-    """Helper function to check if a string can be cast to a float."""
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
-
-
-def auto_fix_data_types(df):
-    """Automatically detect data types of columns and fix their types."""
-
-    # Loop over all columns
-    for col in df.columns:
-
-        # Look at the first entry in the column to decide whether fixing could be succesful.
-        example = df[col][0]
-
-        # Detect/fix dates, if applicable based on first entry.
-        try:
-            if pd.to_datetime(example):
-                fix_dates(df, col)
-                break  # After fixing, break out of for-loop.
-        except ValueError:
-            pass
-
-        # Detect/fix integers, if applicable based on first entry.
-        if example.isdigit():
-            fix_integers(df, col)
-            break  # After fixing, break out of for-loop.
-
-        # Detect/fix floats, if applicable based on first entry.
-        if is_float(example):
-            fix_floats(df, col)
-            break # After fixing, break out of for-loop.
-
-        # Detect/fix strings (also cast to lowercast), if applicable based on first entry.
-        # Perform this fallback-operation when other data types were not detected.
-        fix_strings(df, col)
-
+    print(f"Dataframe \"%s\": Fixed dates!" % df.name)
 
 
 def clean_dates(df):
@@ -189,20 +137,28 @@ def clean_dates(df):
     print(f"Dataframe \"%s\": Cleaned out %s dates!" % (df.name, removed))
 
 
-# TODO: fuzzy string matching (match_col <-> key) implementeren?
-def add_column(df, col, match_col, csv, key='lcolumn', val='ncolumn'):
+def drop_duplicates(df, cols):
+    """Drop duplicates in dataframe based on given column values. Print results in terminal."""
+    before = df.shape[0]
+    df.drop_duplicates(subset = cols)
+    after = df.shape[0]
+    duplicates = before - after
+    print(f"Dataframe \"%s\": Dropped %s duplicates!" % (df.name, duplicates))
+
+
+def add_column(df, new_col, match_col, csv_path, key='lcolumn', val='ncolumn'):
     """Add a new column to dataframe based on the match_column, and the mapping in the csv.
 
     df: dataframe to be augmented.
-    col: name of new dataframe column.
+    new_col: name of new dataframe column.
     match_col: colum to match with the csv variable 'key'.
-    csv: path to the csv file which is used for augmentation.
+    csv_path: path to the csv file which is used for augmentation.
     key: name of column in csv file containing keys.
     val: name of column in csv file containing values.
     """
 
     # Load csv file.
-    df_label = pd.read_csv(csv)
+    df_label = pd.read_csv(csv_path)
 
     # Transform csv string data to lowercase.
     df_label[key] = df_label[key].str.lower()
@@ -212,145 +168,94 @@ def add_column(df, col, match_col, csv, key='lcolumn', val='ncolumn'):
     label_dict = dict(zip(df_label[key], df_label[val]))
 
     # Create a new dataframe column. If match_col matches with 'key', set the value to 'val'.
-    df[col] = df[match_col].apply(lambda x: label_dict.get(x))
+    df[new_col] = df[match_col].apply(lambda x: label_dict.get(x))
 
     # Print information about performed operation to terminal.
-    print(f"Dataframe \"%s\": added column \"%s\"!" % (df.name, col))
+    print(f"Dataframe \"%s\": added column \"%s\"!" % (df.name, new_col))
 
 
-# TODO: fuzzy match implementeren?
-# TODO: code sneller maken?
 def add_binary_label_zaken(zaken, stadia):
-    """Create a binary label which defines whether there was woonfraude."""
+    """Create a binary label defining whether there was woonfraude."""
 
-    # Create a translation function from sta_oms and afs_oms to binary woonfraude label.
-    # def woonfraude_binary_2(x):
-    #     r = stadia[stadia['zaak_id'] == x['zaak_id']]
-    #     r = r.sort_values('sta_nr')
-    #     r_list = r['sta_oms'].tolist()
-    #     if 'rapport naar han' in r_list:
-    #         return True
-    #     elif x['afs_oms'] == 'ZL Woning is beschikbaar gekomen':
-    #         return True
-    #     else:
-    #         return False
-
-    # Create a translation function from sta_oms and afs_oms to binary woonfraude label.
-    # TODO: weggooien
-    def woonfraude_binary(x):
-        r = stadia[stadia['zaak_id'] == x['zaak_id']]
-        r = r.sort_values('sta_nr')
-        if 'rapport naar han' in r['sta_oms'].tolist():
-            return True
-        elif x['afs_oms'] == 'ZL Woning is beschikbaar gekomen':
-            return True
-        else:
-            return False
-
-    # Apply translation to zaken dataframe. Add output to new column "woonfraude".
-    def a():
-        zaken['woonfraude'] = zaken.apply(lambda x: woonfraude_binary(x), axis=1)
-
-    # def b():
-    #     zaken['woonfraude'] = zaken.apply(lambda x: woonfraude_binary_2(x), axis=1)
-
-    def c():
-        zaken['woonfraude'] = False  # Set default value to false
-        zaken_mask = zaken.loc[zaken['afs_oms'] == 'ZL Woning is beschikbaar gekomen']
-        stadia_mask = stadia.loc[stadia['sta_oms'] == 'rapport naar han']
-        zaken_ids_1 = zaken_mask['zaak_id'].tolist()
-        zaken_ids_2 = stadia_mask['zaak_id'].tolist()
-        zaken_ids = list(set(zaken_ids_1 + zaken_ids_2))  # Get uniques
-        zaken['woonfraude'] = zaken.apply(lambda x: True if x['zaak_id'] in zaken_ids else False, axis=1)
-        # q.d()
-
-    print(timeit.timeit(a, number=30))
-    # print(timeit.timeit(b, number=10))
-    print(timeit.timeit(c, number=30))
+    # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
+    zaken['woonfraude'] = False  # Set default value to false
+    zaken_mask = zaken.loc[zaken['afs_oms'] == 'ZL Woning is beschikbaar gekomen']
+    stadia_mask = stadia.loc[stadia['sta_oms'] == 'rapport naar han']
+    zaken_ids_1 = zaken_mask['zaak_id'].tolist()
+    zaken_ids_2 = stadia_mask['zaak_id'].tolist()
+    zaken_ids = list(set(zaken_ids_1 + zaken_ids_2))  # Get uniques
+    zaken['woonfraude'] = zaken.apply(lambda x: True if x['zaak_id'] in zaken_ids else False, axis=1)
 
     # Print results
     print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
 
 
-# Module maken en in notebook importeren
-# Optimaliseren binary label toekenning
-# Toevoegen basisregistratie info
+def fix_dfs(adres, zaken, stadia):
+    """Fix adres, zaken en staia dataframes."""
 
-def main():
-
-    # Downloads & saves
-    # adres = download_data('adres')
-    # zaken = download_data('zaken')
-    # stadia = download_data('stadia')
-    # # Name the dataframes
-    # name_dfs(adres, zaken, stadia)
-
-    # save_dfs(adres, zaken, stadia, '1')
-
-
-    # Load previously downloaded snapshot of data.
-    adres, zaken, stadia = load_dfs('1')
-
-
-
-    # Automatisch kolommen casten naar timestamp/int/float/string
-    # TODO: dit lijkt te werken. Test nog even grondig!
-    adres_test = adres.loc[:100, :]
-    auto_fix_data_types(adres_test)
-    q.d()
-
-    '''
     # Adres
-    fix_integers(adres, ['adres_id', 'straatcode', 'sbw_code', 'xref', 'yref',
-                         'sbv_code', 'inwnrs', 'kmrs'])
+    lower_strings(adres)
     fix_dates(adres, ['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'])
     drop_duplicates(adres, "adres_id")
 
     # Zaken
-    fix_integers(zaken, ['adres_id', 'wvs_nr', 'kamer_aantal', 'nuttig_woonoppervlak',
-                         'vloeroppervlak_totaal', 'bedrag_huur'])
+    lower_strings(zaken)
+    drop_duplicates(zaken, "zaak_id")
     fix_dates(zaken, ['begindatum','einddatum', 'wzs_update_datumtijd'])
     clean_dates(zaken)
-    lower_strings(zaken, "beh_oms")
-    drop_duplicates(zaken, "zaak_id")
-    add_column(zaken, 'categorie', 'beh_oms', 'E:/woonfraude/data/aanvulling_beh_oms.csv')
+    add_column(df=zaken, new_col='categorie', match_col='beh_oms',
+               csv_path='E:/woonfraude/data/aanvulling_beh_oms.csv')
 
     # Stadia
-    fix_integers(stadia, ['adres_id', 'wvs_nr', 'sta_nr'])
-    fix_dates(stadia, ['begindatum', 'peildatum', 'einddatum',
-                       'date_created', 'date_modified', 'wzs_update_datumtijd'])
+    lower_strings(stadia)
+    fix_dates(stadia, ['begindatum', 'peildatum', 'einddatum', 'date_created',
+                      'date_modified', 'wzs_update_datumtijd'])
     clean_dates(stadia)
-    lower_strings(stadia, "sta_oms")
-
-    # Add zaak_id and stadium_id
-    stadia['zaak_id'] = stadia['adres_id'].map(str) + '_' + stadia['wvs_nr'].map(str)
-    stadia['stadium_id'] = stadia['zaak_id'] + '_' + stadia['sta_nr'].map(str)
+    stadia['zaak_id'] = stadia['adres_id'].astype(int).astype(str) + '_' + stadia['wvs_nr'].astype(int).astype(str)
+    stadia['stadium_id'] = stadia['zaak_id'] + '_' + stadia['sta_nr'].astype(int).astype(str)
     drop_duplicates(stadia, "stadium_id")
-    add_column(stadia, 'label', 'sta_oms', 'E:/woonfraude/data/aanvulling_sta_oms.csv')
+    add_column(df=stadia, new_col='label', match_col='sta_oms',
+               csv_path='E:/woonfraude/data/aanvulling_sta_oms.csv')
 
-    # Make snapshot of data
-    save_dfs(adres, zaken, stadia, '2')
-    '''
 
-    # Optionele downloads
-    adres_periodes = download_data("adres_periodes", 100)
-    hotline_melding = download_data("hotline_melding", 100)
-    hotline_bevinding = download_data("hotline_bevinding", 100)
-    personen = download_data("personen", 100)
-    personen_huwelijk = download_data("personen_huwelijk", 100)
+def main():
 
-    q.d()
+    DOWNLOAD = False
+    FIX = False
+    ADD_LABEL = False
 
-    adres, zaken, stadia = load_dfs('2')
+    # Downloads & saves tables to dataframes.
+    if DOWNLOAD == True:
+        adres = download_data('adres')
+        zaken = download_data('zaken')
+        stadia = download_data('stadia')
+        # adres_periodes = download_data("adres_periodes", limit=100)
+        # hotline_melding = download_data("hotline_melding", limit=100)
+        # hotline_bevinding = download_data("hotline_bevinding", limit=100)
+        # personen = download_data("personen", limit=100)
+        # personen_huwelijk = download_data("personen_huwelijk", limit=100)
 
-    # add_binary_label_zaken(zaken, stadia)
+        # Name and save the dataframes.
+        name_dfs(adres, zaken, stadia)
+        save_dfs(adres, zaken, stadia, '1')
 
-    # Create small set for optimization of binary label code
-    zaken_small = zaken.loc[:99, :]
-    stadia_small = stadia.loc[:99, :]
-    add_binary_label_zaken(zaken_small, stadia_small)
 
-    q.d()
+    # Load and fix the dataframes.
+    if FIX == True:
+        adres, zaken, stadia = load_dfs('1')
+        fix_dfs(adres, zaken, stadia)
+        save_dfs(adres, zaken, stadia, '2')
+
+
+    if ADD_LABEL == True:
+        adres, zaken, stadia = load_dfs('2')
+        start = time.time()
+        add_binary_label_zaken(zaken, stadia)
+        end = time.time()
+        print("Spent %s seconds" % str(end-start))
+        save_dfs(adres, zaken, stadia, '3')
+
+    adres, zaken, stadia = load_dfs('3')
 
 
 if __name__ == "__main__":
