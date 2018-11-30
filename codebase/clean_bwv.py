@@ -6,14 +6,15 @@ and to categorize it.
 
 Download:
     - Download any tables in the bwv set.
+
 Cleaning:
     - Removing entries with incorrect dates
     - Transforming column data to the correct type
 
 Output: Cleaned and categorized/labeled BWV data
-        - ~40k adresses
-        - ~60k zaken
-        - ~veel stadia
+        - ~48k adresses
+        - ~67k zaken
+        - ~150k stadia
 
 Written by Swaan Dekkers & Thomas Jongstra
 """
@@ -26,7 +27,6 @@ import psycopg2
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import unicodedata
 import warnings
 import requests
 import random
@@ -38,7 +38,6 @@ import q
 from scipy.stats import norm
 from sklearn.preprocessing import StandardScaler
 from scipy import stats
-
 from IPython.core.interactiveshell import InteractiveShell
 from tqdm import tqdm
 tqdm.pandas()
@@ -191,7 +190,7 @@ def add_binary_label_zaken(zaken, stadia):
 
 
 def fix_dfs(adres, zaken, stadia):
-    """Fix adres, zaken en staia dataframes."""
+    """Fix adres, zaken en stadia dataframes."""
 
     # Adres
     lower_strings(adres)
