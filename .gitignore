@@ -1,3 +1,5 @@
 # Untracked folders
 images/
 notebooks_prive/
+*.ipynb_checkpoints/
+*__pycache__/

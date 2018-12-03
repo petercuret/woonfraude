@@ -1,13 +1,11 @@
 """
-extract_features.py
+enrich_data.py
 
-This script takes the enriched BWV data and extract the features 
-that will be used by the model in build_model.py.
+This script aims to take the enriched BWV data, and extract higher level features for learning.
+After running this script, the resulting features should be usable for creating prediction models.
 
-Input: enriched BWV data (~38k entries @ 2018-11-21)
-Output: data of features used to make a model
+Input: enriched BWV data, i.e. coupled with up-to-date BAG data (~38k entries @ 2018-11-21).
+Output: extracted BWV features for model building.
 
 Written by Swaan Dekkers & Thomas Jongstra
 """
-
-# Source this script from collect_data_and_make_model.ipynb.
