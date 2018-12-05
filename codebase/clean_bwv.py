@@ -33,6 +33,7 @@ import random
 import timeit
 import pickle
 import time
+import re
 import q
 
 from scipy.stats import norm
@@ -178,12 +179,14 @@ def add_binary_label_zaken(zaken, stadia):
 
     # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
     zaken['woonfraude'] = False  # Set default value to false
-    zaken_mask = zaken.loc[zaken['afs_oms'] == 'ZL Woning is beschikbaar gekomen']
-    stadia_mask = stadia.loc[stadia['sta_oms'] == 'rapport naar han']
+    zaken_mask = zaken.loc[zaken['afs_oms'].str.contains('zl woning is beschikbaar gekomen',
+                                                         regex=True, flags=re.IGNORECASE) == True]
+    stadia_mask = stadia.loc[stadia['sta_oms'].str.contains('rapport naar han', regex=True,
+                                                            flags=re.IGNORECASE) == True]
     zaken_ids_1 = zaken_mask['zaak_id'].tolist()
     zaken_ids_2 = stadia_mask['zaak_id'].tolist()
     zaken_ids = list(set(zaken_ids_1 + zaken_ids_2))  # Get uniques
-    zaken['woonfraude'] = zaken.apply(lambda x: True if x['zaak_id'] in zaken_ids else False, axis=1)
+    zaken.loc[zaken['zaak_id'].isin(zaken_ids), 'woonfraude'] = True
 
     # Print results
     print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
@@ -221,7 +224,7 @@ def main():
 
     DOWNLOAD = False
     FIX = False
-    ADD_LABEL = False
+    ADD_LABEL = True
 
     # Downloads & saves tables to dataframes.
     if DOWNLOAD == True:
