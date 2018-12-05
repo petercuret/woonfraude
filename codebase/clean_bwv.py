@@ -47,7 +47,7 @@ tqdm.pandas()
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def download_data(table, limit=18446744073709551615):
+def download_data(table, limit=9223372036854775807):
     """
     Download data from wonen server, from specific table.
 
@@ -220,14 +220,12 @@ def fix_dfs(adres, zaken, stadia):
                csv_path='E:/woonfraude/data/aanvulling_sta_oms.csv')
 
 
-def main():
-
-    DOWNLOAD = False
-    FIX = False
-    ADD_LABEL = True
+def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
 
     # Downloads & saves tables to dataframes.
     if DOWNLOAD == True:
+        start = time.time()
+        print("\n######## Starting download...\n")
         adres = download_data('adres')
         zaken = download_data('zaken')
         stadia = download_data('stadia')
@@ -240,22 +238,26 @@ def main():
         # Name and save the dataframes.
         name_dfs(adres, zaken, stadia)
         save_dfs(adres, zaken, stadia, '1')
+        print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     # Load and fix the dataframes.
     if FIX == True:
+        start = time.time()
+        print("\n######## Starting fix...\n")
         adres, zaken, stadia = load_dfs('1')
         fix_dfs(adres, zaken, stadia)
         save_dfs(adres, zaken, stadia, '2')
+        print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     if ADD_LABEL == True:
-        adres, zaken, stadia = load_dfs('2')
         start = time.time()
+        print("\n######## Starting to add label...\n")
+        adres, zaken, stadia = load_dfs('2')
         add_binary_label_zaken(zaken, stadia)
-        end = time.time()
-        print("Spent %s seconds" % str(end-start))
         save_dfs(adres, zaken, stadia, '3')
+        print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
     adres, zaken, stadia = load_dfs('3')
 
