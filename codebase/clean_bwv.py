@@ -19,29 +19,19 @@ Output: Cleaned and categorized/labeled BWV data
 Written by Swaan Dekkers & Thomas Jongstra
 """
 
-# Source this script bwv_cleaning_s_final.ipynb and fill_df_bwv_adres.ipynb.
-
+# Import statements
 import pandas as pd
 import pandas.io.sql as sqlio
 import psycopg2
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import warnings
 import requests
 import random
-import timeit
-import pickle
+import pickle  # vervangen door PytTables? (http://www.pytables.org)
 import time
 import re
 import q
-
-from scipy.stats import norm
-from sklearn.preprocessing import StandardScaler
-from scipy import stats
-from IPython.core.interactiveshell import InteractiveShell
-from tqdm import tqdm
-tqdm.pandas()
 
 # Turn off pandas chained assignment warnings.
 pd.options.mode.chained_assignment = None  # default='warn'
