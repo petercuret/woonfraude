@@ -3,3 +3,5 @@ images/
 notebooks_prive/
 *.ipynb_checkpoints/
 *__pycache__/
+bfg-1.13.0.jar
+passwords.txt
