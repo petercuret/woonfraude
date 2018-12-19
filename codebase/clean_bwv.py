@@ -34,8 +34,7 @@ import re
 import q
 from pathlib import Path
 
-# Load local passwords, if config file exists.
-# if Path("config.py").is_file():
+# Load local passwords (config.py file expected in same folder as this file).
 import config
 
 # Turn off pandas chained assignment warnings.
