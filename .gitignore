@@ -5,3 +5,4 @@ notebooks_prive/
 *__pycache__/
 bfg-1.13.0.jar
 passwords.txt
+codebase/config.py
