@@ -32,6 +32,11 @@ import pickle  # vervangen door PytTables? (http://www.pytables.org)
 import time
 import re
 import q
+from pathlib import Path
+
+# Load local passwords, if config file exists.
+# if Path("config.py").is_file():
+import config
 
 # Turn off pandas chained assignment warnings.
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -48,9 +53,9 @@ def download_data(table, limit=9223372036854775807):
 
     # Open right server connection.
     if table in ['adres', 'zaken', 'stadia']:
-        conn = psycopg2.connect("EXAMPLE_LOGIN")
+        conn = psycopg2.connect(config.server_1)
     else:
-        conn = psycopg2.connect("EXAMPLE_LOGIN")
+        conn = psycopg2.connect(config.server_2)
 
     # Create query to download specific table data from server.
     sql = f"select * from public.bwv_%s limit %s;" % (table, limit)
@@ -216,18 +221,18 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
     if DOWNLOAD == True:
         start = time.time()
         print("\n######## Starting download...\n")
-        adres = download_data('adres')
-        zaken = download_data('zaken')
-        stadia = download_data('stadia')
-        # adres_periodes = download_data("adres_periodes", limit=100)
-        # hotline_melding = download_data("hotline_melding", limit=100)
-        # hotline_bevinding = download_data("hotline_bevinding", limit=100)
-        # personen = download_data("personen", limit=100)
-        # personen_huwelijk = download_data("personen_huwelijk", limit=100)
-
+        # adres = download_data('adres')
+        # zaken = download_data('zaken')
+        # stadia = download_data('stadia')
+        adres_periodes = download_data("adres_periodes", limit=100)
+        hotline_melding = download_data("hotline_melding", limit=100)
+        hotline_bevinding = download_data("hotline_bevinding", limit=100)
+        personen = download_data("personen", limit=100)
+        personen_huwelijk = download_data("personen_huwelijk", limit=100)
+        q.d()
         # Name and save the dataframes.
-        name_dfs(adres, zaken, stadia)
-        save_dfs(adres, zaken, stadia, '1')
+        # name_dfs(adres, zaken, stadia)
+        # save_dfs(adres, zaken, stadia, '1')
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -253,4 +258,4 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
 
 
 if __name__ == "__main__":
-    main()
+    main(DOWNLOAD=True)
