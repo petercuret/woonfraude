@@ -1,5 +1,5 @@
 """
-enrich_data.py
+extract_features.py
 
 This script aims to take the enriched BWV data, and extract higher level features for learning.
 After running this script, the resulting features should be usable for creating prediction models.
