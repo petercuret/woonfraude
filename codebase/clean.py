@@ -1,5 +1,5 @@
 """
-clean_bwv.py
+clean.py
 
 This script implements functions to download BWV data from the wonen servers, to clean this data,
 and to categorize it.
@@ -19,81 +19,17 @@ Output: Cleaned and categorized/labeled BWV data
 Written by Swaan Dekkers & Thomas Jongstra
 """
 
+
 # Import statements
 import pandas as pd
-import pandas.io.sql as sqlio
-import psycopg2
-import matplotlib.pyplot as plt
-import numpy as np
-import warnings
-import requests
-import random
-import pickle  # vervangen door PytTables? (http://www.pytables.org)
 import time
 import re
-import q
-from pathlib import Path
 
-# Load local passwords (config.py file expected in same folder as this file).
-import config
+# Import own modules
+import core
 
 # Turn off pandas chained assignment warnings.
 pd.options.mode.chained_assignment = None  # default='warn'
-
-
-def download_data(table, limit=9223372036854775807):
-    """
-    Download data from wonen server, from specific table.
-
-    Table options: "adres", "zaken", "stadia", "adres_periodes", "hotline_melding",
-                   "hotline_bevinding", "personen", "personen_huwelijk", e.a..
-
-    """
-
-    # Open right server connection.
-    if table in ['adres', 'zaken', 'stadia']:
-        conn = psycopg2.connect(config.server_1)
-    else:
-        conn = psycopg2.connect(config.server_2)
-
-    # Create query to download specific table data from server.
-    sql = f"select * from public.bwv_%s limit %s;" % (table, limit)
-
-    # Get data & convert to dataframe.
-    df = sqlio.read_sql_query(sql, conn)
-
-    # Close connection to server.
-    conn.close()
-
-    # Name dataframe according to table name. Won't be saved after pickling.
-    df.name = table
-
-    # Return dataframe.
-    return df
-
-
-def save_dfs(adres, zaken, stadia, version, path="E:\\woonfraude\\data\\"):
-    """Save a version of the given dataframes to dir."""
-    adres.to_pickle("%sadres_%s.p" % (path, version))
-    zaken.to_pickle("%szaken_%s.p" % (path, version))
-    stadia.to_pickle("%sstadia_%s.p" % (path, version))
-    print("Dataframes saved as version \"%s\"." % version)
-
-
-def load_dfs(version, path="E:\\woonfraude\\data\\"):
-    """Load a version of the dataframes from dir. Rename them (pickling removes name)."""
-    adres = pd.read_pickle("%sadres_%s.p" % (path, version))
-    zaken = pd.read_pickle("%szaken_%s.p" % (path, version))
-    stadia = pd.read_pickle("%sstadia_%s.p" % (path, version))
-    name_dfs(adres, zaken, stadia)
-    return adres, zaken, stadia
-
-
-def name_dfs(adres, zaken, stadia):
-    """Name dataframes."""
-    adres.name = 'adres'
-    zaken.name = 'zaken'
-    stadia.name = 'stadia'
 
 
 def lower_strings(df, cols=None):
@@ -220,18 +156,17 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
     if DOWNLOAD == True:
         start = time.time()
         print("\n######## Starting download...\n")
-        # adres = download_data('adres')
-        # zaken = download_data('zaken')
-        # stadia = download_data('stadia')
-        adres_periodes = download_data("adres_periodes", limit=100)
-        hotline_melding = download_data("hotline_melding", limit=100)
-        hotline_bevinding = download_data("hotline_bevinding", limit=100)
-        personen = download_data("personen", limit=100)
-        personen_huwelijk = download_data("personen_huwelijk", limit=100)
-        q.d()
+        adres = download_data('adres')
+        zaken = download_data('zaken')
+        stadia = download_data('stadia')
+        # adres_periodes = download_data("adres_periodes", limit=100)
+        # hotline_melding = download_data("hotline_melding", limit=100)
+        # hotline_bevinding = download_data("hotline_bevinding", limit=100)
+        # personen = download_data("personen", limit=100)
+        # personen_huwelijk = download_data("personen_huwelijk", limit=100)
         # Name and save the dataframes.
-        # name_dfs(adres, zaken, stadia)
-        # save_dfs(adres, zaken, stadia, '1')
+        core.name_dfs(adres, zaken, stadia)
+        core.save_dfs(adres, zaken, stadia, '1')
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -239,18 +174,18 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
     if FIX == True:
         start = time.time()
         print("\n######## Starting fix...\n")
-        adres, zaken, stadia = load_dfs('1')
+        adres, zaken, stadia = core.load_dfs('1')
         fix_dfs(adres, zaken, stadia)
-        save_dfs(adres, zaken, stadia, '2')
+        core.save_dfs(adres, zaken, stadia, '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     if ADD_LABEL == True:
         start = time.time()
         print("\n######## Starting to add label...\n")
-        adres, zaken, stadia = load_dfs('2')
+        adres, zaken, stadia = core.load_dfs('2')
         add_binary_label_zaken(zaken, stadia)
-        save_dfs(adres, zaken, stadia, '3')
+        core.save_dfs(adres, zaken, stadia, '3')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
     adres, zaken, stadia = load_dfs('3')
