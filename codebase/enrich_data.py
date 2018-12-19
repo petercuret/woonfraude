@@ -26,7 +26,7 @@ def main():
     adres, zaken, stadia = clean_bwv.load_dfs(3)
 
     # Load BAG data
-    bag_path = Path("E:/woonfraude/data/base/csv/ALL.csv")
+    bag_path = Path("E:/woonfraude/data/ALL.csv")
     df = pd.read_csv(bag_path, sep=',', encoding="latin-1")
 
     # Pre-process adres data for join with BAG data.
