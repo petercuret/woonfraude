@@ -13,6 +13,7 @@ import pandas.io.sql as sqlio
 import pandas as pd
 import psycopg2
 import pickle  # vervangen door PytTables? (http://www.pytables.org)
+import time
 
 # Import own modules
 import clean
