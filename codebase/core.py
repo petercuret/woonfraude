@@ -15,8 +15,8 @@ import psycopg2
 import pickle  # vervangen door PytTables? (http://www.pytables.org)
 
 # Import own modules
+import clean
 import config  # Load local passwords (config.py file expected in same folder as this file).
-
 
 def download_data(table, limit=9223372036854775807):
     """
@@ -71,3 +71,48 @@ def name_dfs(adres, zaken, stadia):
     adres.name = 'adres'
     zaken.name = 'zaken'
     stadia.name = 'stadia'
+
+
+def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
+
+    # Downloads & saves tables to dataframes.
+    if DOWNLOAD == True:
+        start = time.time()
+        print("\n######## Starting download...\n")
+        adres = download_data('adres')
+        zaken = download_data('zaken')
+        stadia = download_data('stadia')
+        # adres_periodes = download_data("adres_periodes", limit=100)
+        # hotline_melding = download_data("hotline_melding", limit=100)
+        # hotline_bevinding = download_data("hotline_bevinding", limit=100)
+        # personen = download_data("personen", limit=100)
+        # personen_huwelijk = download_data("personen_huwelijk", limit=100)
+        # Name and save the dataframes.
+        name_dfs(adres, zaken, stadia)
+        save_dfs(adres, zaken, stadia, '1')
+        print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
+
+
+    # Load and fix the dataframes.
+    if FIX == True:
+        start = time.time()
+        print("\n######## Starting fix...\n")
+        adres, zaken, stadia = load_dfs('1')
+        clean.fix_dfs(adres, zaken, stadia)
+        save_dfs(adres, zaken, stadia, '2')
+        print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
+
+
+    if ADD_LABEL == True:
+        start = time.time()
+        print("\n######## Starting to add label...\n")
+        adres, zaken, stadia = load_dfs('2')
+        clean.add_binary_label_zaken(zaken, stadia)
+        save_dfs(adres, zaken, stadia, '3')
+        print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
+
+    adres, zaken, stadia = load_dfs('3')
+
+
+if __name__ == "__main__":
+    main()
