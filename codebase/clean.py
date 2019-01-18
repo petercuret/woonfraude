@@ -134,10 +134,9 @@ def fix_dfs(adres, zaken, stadia):
     drop_duplicates(zaken, "zaak_id")
     fix_dates(zaken, ['begindatum','einddatum', 'wzs_update_datumtijd'])
     clean_dates(zaken)
+    lower_strings(zaken)  # This needs to be done before add_column (we match lowercase strings)
     add_column(df=zaken, new_col='categorie', match_col='beh_oms',
                csv_path='E:/woonfraude/data/aanvulling_beh_oms.csv')
-    lower_strings(zaken)
-    print(zaken.begindatum[0])
 
     # Stadia
     fix_dates(stadia, ['begindatum', 'peildatum', 'einddatum', 'date_created',
@@ -146,6 +145,6 @@ def fix_dfs(adres, zaken, stadia):
     stadia['zaak_id'] = stadia['adres_id'].astype(int).astype(str) + '_' + stadia['wvs_nr'].astype(int).astype(str)
     stadia['stadium_id'] = stadia['zaak_id'] + '_' + stadia['sta_nr'].astype(int).astype(str)
     drop_duplicates(stadia, "stadium_id")
-    lower_strings(stadia)
+    lower_strings(stadia) # This needs to be done before add_column (we match lowercase strings)
     add_column(df=stadia, new_col='label', match_col='sta_oms',
                csv_path='E:/woonfraude/data/aanvulling_sta_oms.csv')
