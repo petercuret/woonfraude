@@ -14,12 +14,16 @@ import pandas as pd
 import psycopg2
 import pickle  # vervangen door PytTables? (http://www.pytables.org)
 import time
+import os
 
 # Import own modules
 import clean
 import config  # Load local passwords (config.py file expected in same folder as this file).
 
-def download_data(table, limit=9223372036854775807):
+
+dir_path = os.path.dirname(os.path.realpath(__file__))+"/../data/"
+
+def download_data(table, prefix="bwv_", limit=9223372036854775807):
     """
     Download data from wonen server, from specific table.
 
@@ -29,13 +33,16 @@ def download_data(table, limit=9223372036854775807):
     """
 
     # Open right server connection.
-    if table in ['adres', 'zaken', 'stadia']:
-        conn = psycopg2.connect(config.server_1)
-    else:
-        conn = psycopg2.connect(config.server_2)
+    if table in ['adres', 'wvs', 'stadia']:
+        prefix= "import_"
+    
+    conn = psycopg2.connect(host=config.HOST, port=config.PORT, dbname=config.DB, user=config.USER,
+        password=config.PASSWRD)
+    # else:
+    #     conn = psycopg2.connect(config.server_2)
 
     # Create query to download specific table data from server.
-    sql = f"select * from public.bwv_%s limit %s;" % (table, limit)
+    sql = f"select * from public.%s%s limit %s;" % (prefix, table, limit)
 
     # Get data & convert to dataframe.
     df = sqlio.read_sql_query(sql, conn)
@@ -50,7 +57,7 @@ def download_data(table, limit=9223372036854775807):
     return df
 
 
-def save_dfs(adres, zaken, stadia, version, path="E:\\woonfraude\\data\\"):
+def save_dfs(adres, zaken, stadia, version, path=dir_path):
     """Save a version of the given dataframes to dir."""
     adres.to_pickle("%sadres_%s.p" % (path, version))
     zaken.to_pickle("%szaken_%s.p" % (path, version))
@@ -58,7 +65,7 @@ def save_dfs(adres, zaken, stadia, version, path="E:\\woonfraude\\data\\"):
     print("Dataframes saved as version \"%s\"." % version)
 
 
-def load_dfs(version, path="E:\\woonfraude\\data\\"):
+def load_dfs(version, path=dir_path):
     """Load a version of the dataframes from dir. Rename them (pickling removes name)."""
     adres = pd.read_pickle("%sadres_%s.p" % (path, version))
     zaken = pd.read_pickle("%szaken_%s.p" % (path, version))
@@ -81,7 +88,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
         start = time.time()
         print("\n######## Starting download...\n")
         adres = download_data('adres')
-        zaken = download_data('zaken')
+        zaken = download_data('wvs')
         stadia = download_data('stadia')
         # adres_periodes = download_data("adres_periodes", limit=100)
         # hotline_melding = download_data("hotline_melding", limit=100)
@@ -99,7 +106,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
         start = time.time()
         print("\n######## Starting fix...\n")
         adres, zaken, stadia = load_dfs('1')
-        clean.fix_dfs(adres, zaken, stadia)
+        # clean.fix_dfs(adres, zaken, stadia) ##Clean is not working yet
         save_dfs(adres, zaken, stadia, '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
@@ -108,7 +115,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
         start = time.time()
         print("\n######## Starting to add label...\n")
         adres, zaken, stadia = load_dfs('2')
-        clean.add_binary_label_zaken(zaken, stadia)
+        # clean.add_binary_label_zaken(zaken, stadia) ##Clean is not workind yet
         save_dfs(adres, zaken, stadia, '3')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
