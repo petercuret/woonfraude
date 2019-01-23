@@ -37,9 +37,7 @@ def download_data(table, prefix="bwv_", limit=9223372036854775807):
         prefix= "import_"
     
     conn = psycopg2.connect(host=config.HOST, port=config.PORT, dbname=config.DB, user=config.USER,
-        password=config.PASSWRD)
-    # else:
-    #     conn = psycopg2.connect(config.server_2)
+        password=config.PASSWORD)
 
     # Create query to download specific table data from server.
     sql = f"select * from public.%s%s limit %s;" % (prefix, table, limit)
@@ -106,7 +104,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
         start = time.time()
         print("\n######## Starting fix...\n")
         adres, zaken, stadia = load_dfs('1')
-        # clean.fix_dfs(adres, zaken, stadia) ##Clean is not working yet
+        clean.fix_dfs(adres, zaken, stadia) ##Clean is not working yet
         save_dfs(adres, zaken, stadia, '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
@@ -115,7 +113,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
         start = time.time()
         print("\n######## Starting to add label...\n")
         adres, zaken, stadia = load_dfs('2')
-        # clean.add_binary_label_zaken(zaken, stadia) ##Clean is not workind yet
+        clean.add_binary_label_zaken(zaken, stadia) ##Clean is not workind yet
         save_dfs(adres, zaken, stadia, '3')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
