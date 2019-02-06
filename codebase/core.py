@@ -18,6 +18,8 @@ import time
 # Import own modules
 import clean
 import config  # Load local passwords (config.py file expected in same folder as this file).
+import extract_features
+import build_model
 
 def download_data(table, limit=9223372036854775807):
     """
@@ -112,7 +114,33 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
         save_dfs(adres, zaken, stadia, '3')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
-    adres, zaken, stadia = load_dfs('3')
+
+    EXTRACT_FEATURES = False
+    if EXTRACT_FEATURES == True:
+        start = time.time()
+        print("\n######## Starting to extract features...\n")
+        adres, zaken, stadia = load_dfs('3')
+        df = extract_features.impute_missing_values(df)  # Verplaatsen naar clean.py?
+        df = extract_features.extract_date_features(df)
+        # Extract features from columns based on word occurrence and one-hot encoding.
+        df = extract_features.process_df_text_columns(df, ['beh_oms'])
+        df = extract_features.process_df_categorical_columns(df, ['eigenaar'])
+        # TODO: SAVE DF INBOUWEN?
+        print("\n#### ...extracting features done! Spent %.2f seconds.\n" % (time.time()-start))
+
+
+    BUILD_MODEL = False
+    if BUILD_MODEL = True:
+        start = time.time()
+        print("\n######## Starting to build model...\n")
+        # Combine adres & zaken dataframes
+        df = build_model.prepare_data(adres, zaken)
+        X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data()
+        X_train, y_train = augment_data(X_train_org, y_train_org)
+        knn, precision, recall, f1, conf = run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11)
+        print(f"Precisions: {precision}\nRecall: {recall}\nF1: {f1}\n")
+        print(conf)
+        print("\n#### ...building model done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
 if __name__ == "__main__":
