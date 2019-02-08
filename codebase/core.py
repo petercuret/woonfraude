@@ -76,7 +76,7 @@ def name_dfs(adres, zaken, stadia):
     stadia.name = 'stadia'
 
 
-def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
+def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUILD_MODEL=False):
 
     # Downloads & saves tables to dataframes.
     if DOWNLOAD == True:
@@ -115,22 +115,28 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False):
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
-    EXTRACT_FEATURES = False
     if EXTRACT_FEATURES == True:
         start = time.time()
         print("\n######## Starting to extract features...\n")
         adres, zaken, stadia = load_dfs('3')
-        df = extract_features.impute_missing_values(df)  # Verplaatsen naar clean.py?
-        df = extract_features.extract_date_features(df)
+        # Impute missing values
+        adres = extract_features.impute_missing_values(adres)  # Verplaatsen naar clean.py?
+        zaken = extract_features.impute_missing_values(zaken)  # Verplaatsen naar clean.py?
+        # Extract date features
+        adres = extract_features.extract_date_features(adres)
+        zaken = extract_features.extract_date_features(zaken)
         # Extract features from columns based on word occurrence and one-hot encoding.
-        df = extract_features.process_df_text_columns(df, ['beh_oms'])
-        df = extract_features.process_df_categorical_columns(df, ['eigenaar'])
+        adres = extract_features.process_df_text_columns(adres, ['beh_oms'])
+        adres = extract_features.process_df_categorical_columns(adres, ['sbw_omschr', 'sbv_omschr'])
+
+        zaken = extract_features.process_df_text_columns(zaken, ['beh_oms'])
+        zaken = extract_features.process_df_categorical_columns(zaken, ['eigenaar'])
+
         # TODO: SAVE DF INBOUWEN?
         print("\n#### ...extracting features done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
-    BUILD_MODEL = False
-    if BUILD_MODEL = True:
+    if BUILD_MODEL == True:
         start = time.time()
         print("\n######## Starting to build model...\n")
         # Combine adres & zaken dataframes

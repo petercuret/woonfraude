@@ -10,6 +10,8 @@ Output: extracted BWV features for model building.
 Written by Swaan Dekkers & Thomas Jongstra
 """
 
+# Imports
+import pandas as pd
 
 # Import own module
 import core
@@ -58,7 +60,6 @@ def impute_missing_values(df):
     """Impute missing values in each column (using column averages)."""
     # Compute averages per column (not for date columns)
     averages = dict(df.mean())
-    averages['woonfraude'] = False if averages['woonfraude'] < 0.5 else True
 
     # Impute missing values by using column averages
     df.fillna(value=averages, inplace=True)

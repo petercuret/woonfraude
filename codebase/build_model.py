@@ -70,7 +70,7 @@ def split_data(df):
 
 
 def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
-	"""Synthesize more positive samples using one of various techniques (ADASYN, SMOTE, etc.)"""
+    """Synthesize more positive samples using one of various techniques (ADASYN, SMOTE, etc.)"""
 
     # Set random seed.
     random_seed = 42
@@ -114,7 +114,7 @@ def evaluate_performance(y_pred, y_dev):
 
 
 def run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11):
-	"""Run a KNN model. Return results"""
+    """Run a KNN model. Return results"""
 
     # Build KNN model using several neighbors.
     knn = KNeighborsClassifier(n_neighbors=n_neighbors)
