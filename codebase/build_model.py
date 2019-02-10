@@ -41,6 +41,14 @@ def prepare_data(adres, zaken):
     return df
 
 
+def impute_missing_values(df):
+	"""Impute missing values in each column (using column averages)."""
+	# Compute averages per column (not for date columns)
+	averages = dict(df.mean())
+	# Impute missing values by using column averages
+	df.fillna(value=averages, inplace=True)
+
+
 def split_data(df):
 	# Creating sets for model building and testing
 	# 1. Training set (70%) - for building the model

@@ -54,17 +54,23 @@ def download_data(table, limit=9223372036854775807):
 
 def save_dfs(adres, zaken, stadia, version, path="E:\\woonfraude\\data\\"):
     """Save a version of the given dataframes to dir."""
-    adres.to_pickle("%sadres_%s.p" % (path, version))
-    zaken.to_pickle("%szaken_%s.p" % (path, version))
-    stadia.to_pickle("%sstadia_%s.p" % (path, version))
+    # adres.to_pickle("%sadres_%s.p" % (path, version))
+    # zaken.to_pickle("%szaken_%s.p" % (path, version))
+    # stadia.to_pickle("%sstadia_%s.p" % (path, version))
+    adres.to_hdf(f"{path}data_{version}.h5", key='adres', mode='w')
+    zaken.to_hdf(f"{path}data_{version}.h5", key='zaken', mode='a')
+    stadia.to_hdf(f"{path}data_{version}.h5", key='stadia', mode='a')
     print("Dataframes saved as version \"%s\"." % version)
 
 
 def load_dfs(version, path="E:\\woonfraude\\data\\"):
     """Load a version of the dataframes from dir. Rename them (pickling removes name)."""
-    adres = pd.read_pickle("%sadres_%s.p" % (path, version))
-    zaken = pd.read_pickle("%szaken_%s.p" % (path, version))
-    stadia = pd.read_pickle("%sstadia_%s.p" % (path, version))
+    # adres = pd.read_pickle("%sadres_%s.p" % (path, version))
+    # zaken = pd.read_pickle("%szaken_%s.p" % (path, version))
+    # stadia = pd.read_pickle("%sstadia_%s.p" % (path, version))
+    adres = pd.read_hdf(f"{path}data_{version}.h5", 'adres')
+    zaken = pd.read_hdf(f"{path}data_{version}.h5", 'zaken')
+    stadia = pd.read_hdf(f"{path}data_{version}.h5", 'stadia')
     name_dfs(adres, zaken, stadia)
     return adres, zaken, stadia
 
@@ -119,9 +125,6 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUI
         start = time.time()
         print("\n######## Starting to extract features...\n")
         adres, zaken, stadia = load_dfs('3')
-        # Impute missing values
-        extract_features.impute_missing_values(adres)  # Verplaatsen naar clean.py?
-        extract_features.impute_missing_values(zaken)  # Verplaatsen naar clean.py?
         # Extract date features
         extract_features.extract_date_features(adres)
         extract_features.extract_date_features(zaken)
@@ -138,10 +141,10 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUI
 
     if BUILD_MODEL == True:
         start = time.time()
-        adres, zaken, stadia = load_dfs('4')
         print("\n######## Starting to build model...\n")
-        # Combine adres & zaken dataframes
+        adres, zaken, stadia = load_dfs('4')
         df = build_model.prepare_data(adres, zaken)
+        build_model.impute_missing_values(df)
         X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data()
         X_train, y_train = augment_data(X_train_org, y_train_org)
         knn, precision, recall, f1, conf = run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11)
