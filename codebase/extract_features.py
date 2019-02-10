@@ -12,9 +12,23 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 # Imports
 import pandas as pd
+import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
 
 # Import own module
 import core
+
+
+def prepare_data(adres, zaken):
+    """Combine address and cases data"""
+    # Add address information to each case (this duplicates 'wzs_id' and 'wzs_update_datumtijd').
+    df = zaken.merge(adres, on='adres_id', how='left')
+    # Remove all columns which would not yet be available when cases (zaken) are newly opened.
+    df = df.drop(columns=['einddatum', 'afg_code_beh', 'afs_code', 'afs_oms', 'afg_code_afs', 'wzs_update_datumtijd_x', 'wzs_update_datumtijd_y', 'mededelingen'])
+    # Also remove columns with more than 40% nonetype data.
+    df.drop(columns=['hsltr', 'toev'], inplace=True)
+    return df
+
 
 ##################################
 ##### Features based on text #####
@@ -26,7 +40,7 @@ def text_series_to_features(series):
     X = vectorizer.fit_transform(series)
     features = vectorizer.get_feature_names()
     matrix = X.toarray()
-    return words, matrix
+    return features, matrix
 
 def extract_text_col_features(df, col):
     """Extract text features from a single column in a df. Return an occurrence dataframe encoding based on these features."""
@@ -41,6 +55,7 @@ def process_df_text_columns(df, cols):
         col_features = extract_text_col_features(df, col)
         df = pd.concat([df, col_features], axis=1, sort=False)
         df.drop(columns=[col], inplace=True)
+    return df
 
 def process_df_categorical_columns(df, cols):
     """Create HOT encoded feature columns for the dataframe, based on the defined categorical columns."""
@@ -48,20 +63,12 @@ def process_df_categorical_columns(df, cols):
         col_features = pd.get_dummies(df[col], prefix=col, prefix_sep='#')
         df = pd.concat([df, col_features], axis=1, sort=False)
         df.drop(columns=[col], inplace=True)
+    return df
 
 
 ###########################
 ##### Other Features  #####
 ###########################
-
-def impute_missing_values(df):
-    """Impute missing values in each column (using column averages)."""
-    # Compute averages per column (not for date columns)
-    averages = dict(df.mean())
-
-    # Impute missing values by using column averages
-    df.fillna(value=averages, inplace=True)
-
 
 def extract_date_features(df):
     """Expand datetime values into individual features."""
@@ -76,3 +83,5 @@ def extract_date_features(df):
 
     for col in df.select_dtypes(include=['float64']):
         pass
+
+    return df

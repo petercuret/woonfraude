@@ -12,7 +12,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 import pandas.io.sql as sqlio
 import pandas as pd
 import psycopg2
-import pickle  # vervangen door PytTables? (http://www.pytables.org)
+import pickle
 import time
 
 # Import own modules
@@ -52,34 +52,29 @@ def download_data(table, limit=9223372036854775807):
     return df
 
 
-def save_dfs(adres, zaken, stadia, version, path="E:\\woonfraude\\data\\"):
-    """Save a version of the given dataframes to dir."""
-    # adres.to_pickle("%sadres_%s.p" % (path, version))
-    # zaken.to_pickle("%szaken_%s.p" % (path, version))
-    # stadia.to_pickle("%sstadia_%s.p" % (path, version))
-    adres.to_hdf(f"{path}data_{version}.h5", key='adres', mode='w')
-    zaken.to_hdf(f"{path}data_{version}.h5", key='zaken', mode='a')
-    stadia.to_hdf(f"{path}data_{version}.h5", key='stadia', mode='a')
+def save_dfs(dfs, version, path="E:\\woonfraude\\data\\"):
+    """Save a version of the given dataframes to dir. Use the df names as their keys."""
+    dfs[0].to_hdf(f"{path}data_{version}.h5", key=dfs[0].name, mode='w')
+    if len(dfs) > 0:
+        for df in dfs[1:]:
+            df.to_hdf(f"{path}data_{version}.h5", key=df.name, mode='a')
     print("Dataframes saved as version \"%s\"." % version)
 
 
 def load_dfs(version, path="E:\\woonfraude\\data\\"):
     """Load a version of the dataframes from dir. Rename them (pickling removes name)."""
-    # adres = pd.read_pickle("%sadres_%s.p" % (path, version))
-    # zaken = pd.read_pickle("%szaken_%s.p" % (path, version))
-    # stadia = pd.read_pickle("%sstadia_%s.p" % (path, version))
-    adres = pd.read_hdf(f"{path}data_{version}.h5", 'adres')
-    zaken = pd.read_hdf(f"{path}data_{version}.h5", 'zaken')
-    stadia = pd.read_hdf(f"{path}data_{version}.h5", 'stadia')
-    name_dfs(adres, zaken, stadia)
-    return adres, zaken, stadia
+    # Get keys of dfs in data file.
+    keys = []
+    with pd.HDFStore(f"{path}data_{version}.h5") as hdf:
+        keys = hdf.keys()
+    # Load dfs from data file.
+    dfs = {}
+    for key in keys:
+        key = key[1:]  # Remove leading forward slash from key name
+        dfs[key] = pd.read_hdf(f"{path}data_{version}.h5", key)
+        dfs[key].name = key
+    return dfs
 
-
-def name_dfs(adres, zaken, stadia):
-    """Name dataframes."""
-    adres.name = 'adres'
-    zaken.name = 'zaken'
-    stadia.name = 'stadia'
 
 
 def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUILD_MODEL=False):
@@ -97,8 +92,10 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUI
         # personen = download_data("personen", limit=100)
         # personen_huwelijk = download_data("personen_huwelijk", limit=100)
         # Name and save the dataframes.
-        name_dfs(adres, zaken, stadia)
-        save_dfs(adres, zaken, stadia, '1')
+        adres.name = 'adres'
+        zaken.name = 'zaken'
+        stadia.name = 'stadia'
+        save_dfs([adres, zaken, stadia], '1')
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -106,47 +103,54 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUI
     if FIX == True:
         start = time.time()
         print("\n######## Starting fix...\n")
-        adres, zaken, stadia = load_dfs('1')
+        dfs = load_dfs('1')
+        adres = dfs['adres']
+        zaken = dfs['zaken']
+        stadia = dfs['stadia']
         clean.fix_dfs(adres, zaken, stadia)
-        save_dfs(adres, zaken, stadia, '2')
+        save_dfs([adres, zaken, stadia], '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     if ADD_LABEL == True:
         start = time.time()
         print("\n######## Starting to add label...\n")
-        adres, zaken, stadia = load_dfs('2')
+        dfs = load_dfs('2')
+        adres = dfs['adres']
+        zaken = dfs['zaken']
+        stadia = dfs['stadia']
         clean.add_binary_label_zaken(zaken, stadia)
-        save_dfs(adres, zaken, stadia, '3')
+        save_dfs([adres, zaken, stadia], '3')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     if EXTRACT_FEATURES == True:
         start = time.time()
         print("\n######## Starting to extract features...\n")
-        adres, zaken, stadia = load_dfs('3')
-        # Extract date features
-        extract_features.extract_date_features(adres)
-        extract_features.extract_date_features(zaken)
+        dfs = load_dfs('3')
+        adres = dfs['adres']
+        zaken = dfs['zaken']
+        stadia = dfs['stadia']
+        # Combine adres and zaken dfs. Remove columns which are not available when cases are opened.
+        df = extract_features.prepare_data(adres, zaken)
+        # Extract date features.
+        df = extract_features.extract_date_features(df)
         # Extract features from columns based on word occurrence and one-hot encoding.
-        extract_features.process_df_text_columns(adres, ['beh_oms'])
-        extract_features.process_df_categorical_columns(adres, ['sbw_omschr', 'sbv_omschr'])
-
-        extract_features.process_df_text_columns(zaken, ['beh_oms'])
-        extract_features.process_df_categorical_columns(zaken, ['eigenaar'])
-
-        save_dfs(adres, zaken, stadia, '4')
+        # TODO: COMPLETE THIS LIST OF COLUMNS THAT HAVE TO BE PROCESSED!
+        df = extract_features.process_df_text_columns(df, ['beh_oms'])
+        df = extract_features.process_df_categorical_columns(df, ['sbw_omschr', 'sbv_omschr', 'pvh_omschr', 'eigenaar'])
+        df.name = 'df'
+        save_dfs([df, stadia], '4')
         print("\n#### ...extracting features done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     if BUILD_MODEL == True:
         start = time.time()
-        print("\n######## Starting to build model...\n")
-        adres, zaken, stadia = load_dfs('4')
-        df = build_model.prepare_data(adres, zaken)
-        build_model.impute_missing_values(df)
-        X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data()
-        X_train, y_train = augment_data(X_train_org, y_train_org)
+        dfs = load_dfs('4')
+        df = dfs['df']
+        stadia = dfs['stadia']
+        X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data(df)
+        X_train, y_train = build_model.augment_data(X_train_org, y_train_org)
         knn, precision, recall, f1, conf = run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11)
         print(f"Precisions: {precision}\nRecall: {recall}\nF1: {f1}\n")
         print(conf)

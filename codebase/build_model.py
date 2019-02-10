@@ -20,25 +20,12 @@ from collections import Counter
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import f1_score, precision_score, recall_score, precision_recall_curve, confusion_matrix
 from sklearn.linear_model import LassoCV
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.feature_extraction.text import CountVectorizer
 
 # Samplers for handling data imbalance
 from imblearn.over_sampling import ADASYN
 from imblearn.over_sampling import SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.base import BaseSampler
-
-
-def prepare_data(adres, zaken):
-    """Combine address and cases data"""
-    # Add address information to each case (this duplicates 'wzs_id' and 'wzs_update_datumtijd').
-    df = zaken.merge(adres, on='adres_id', how='left')
-    # Remove all columns which would not yet be available when cases (zaken) are newly opened.
-    df = df.drop(columns=['einddatum', 'afg_code_beh', 'afs_code', 'afs_oms', 'afg_code_afs', 'wzs_update_datumtijd_x', 'wzs_update_datumtijd_y', 'mededelingen'])
-    # Also remove columns with more than 40% nonetype data.
-    df.drop(columns=['hsltr', 'toev'], inplace=True)
-    return df
 
 
 def impute_missing_values(df):
@@ -58,7 +45,7 @@ def split_data(df):
 	# Split data into features (X) and labels (y).
 	X = df.drop('woonfraude', axis=1)
 	y = df.woonfraude
-	print('Original dataset shape %s' % Counter(y_org))
+	print('Original dataset shape %s' % Counter(y))
 
 	n = X.shape[0]
 
