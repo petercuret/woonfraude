@@ -120,24 +120,25 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUI
         print("\n######## Starting to extract features...\n")
         adres, zaken, stadia = load_dfs('3')
         # Impute missing values
-        adres = extract_features.impute_missing_values(adres)  # Verplaatsen naar clean.py?
-        zaken = extract_features.impute_missing_values(zaken)  # Verplaatsen naar clean.py?
+        extract_features.impute_missing_values(adres)  # Verplaatsen naar clean.py?
+        extract_features.impute_missing_values(zaken)  # Verplaatsen naar clean.py?
         # Extract date features
-        adres = extract_features.extract_date_features(adres)
-        zaken = extract_features.extract_date_features(zaken)
+        extract_features.extract_date_features(adres)
+        extract_features.extract_date_features(zaken)
         # Extract features from columns based on word occurrence and one-hot encoding.
-        adres = extract_features.process_df_text_columns(adres, ['beh_oms'])
-        adres = extract_features.process_df_categorical_columns(adres, ['sbw_omschr', 'sbv_omschr'])
+        extract_features.process_df_text_columns(adres, ['beh_oms'])
+        extract_features.process_df_categorical_columns(adres, ['sbw_omschr', 'sbv_omschr'])
 
-        zaken = extract_features.process_df_text_columns(zaken, ['beh_oms'])
-        zaken = extract_features.process_df_categorical_columns(zaken, ['eigenaar'])
+        extract_features.process_df_text_columns(zaken, ['beh_oms'])
+        extract_features.process_df_categorical_columns(zaken, ['eigenaar'])
 
-        # TODO: SAVE DF INBOUWEN?
+        save_dfs(adres, zaken, stadia, '4')
         print("\n#### ...extracting features done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     if BUILD_MODEL == True:
         start = time.time()
+        adres, zaken, stadia = load_dfs('4')
         print("\n######## Starting to build model...\n")
         # Combine adres & zaken dataframes
         df = build_model.prepare_data(adres, zaken)

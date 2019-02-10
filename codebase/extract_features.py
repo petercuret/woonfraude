@@ -41,7 +41,6 @@ def process_df_text_columns(df, cols):
         col_features = extract_text_col_features(df, col)
         df = pd.concat([df, col_features], axis=1, sort=False)
         df.drop(columns=[col], inplace=True)
-    return df
 
 def process_df_categorical_columns(df, cols):
     """Create HOT encoded feature columns for the dataframe, based on the defined categorical columns."""
@@ -49,7 +48,6 @@ def process_df_categorical_columns(df, cols):
         col_features = pd.get_dummies(df[col], prefix=col, prefix_sep='#')
         df = pd.concat([df, col_features], axis=1, sort=False)
         df.drop(columns=[col], inplace=True)
-    return df
 
 
 ###########################
@@ -63,8 +61,6 @@ def impute_missing_values(df):
 
     # Impute missing values by using column averages
     df.fillna(value=averages, inplace=True)
-
-    return df
 
 
 def extract_date_features(df):
@@ -80,5 +76,3 @@ def extract_date_features(df):
 
     for col in df.select_dtypes(include=['float64']):
         pass
-
-    return df
