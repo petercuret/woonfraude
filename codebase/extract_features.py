@@ -26,7 +26,9 @@ def prepare_data(adres, zaken):
     # Remove all columns which would not yet be available when cases (zaken) are newly opened.
     df = df.drop(columns=['einddatum', 'afg_code_beh', 'afs_code', 'afs_oms', 'afg_code_afs', 'wzs_update_datumtijd_x', 'wzs_update_datumtijd_y', 'mededelingen'])
     # Also remove columns with more than 40% nonetype data.
-    df.drop(columns=['hsltr', 'toev'], inplace=True)
+    # df.drop(columns=['hsltr', 'toev'], inplace=True)
+    # Temporarily remove the wzs_id columns (different values in adres and zaken tables)
+    df.drop(columns=['wzs_id_x', 'wzs_id_y'], inplace=True)
     return df
 
 
@@ -49,20 +51,36 @@ def extract_text_col_features(df, col):
     col_features = pd.DataFrame(data=matrix, columns=features)
     return col_features
 
-def process_df_text_columns(df, cols):
+def process_df_text_columns_hot(df, cols):
     """Create encoded feature columns for the dataframe, based on the defined text columns."""
+    all_col_features = []
     for col in cols:
         col_features = extract_text_col_features(df, col)
-        df = pd.concat([df, col_features], axis=1, sort=False)
-        df.drop(columns=[col], inplace=True)
+        all_col_features.append(col_features)
+    df = pd.concat([df] + all_col_features, axis=1, sort=False)
+    df.drop(columns=cols, inplace=True)
     return df
 
-def process_df_categorical_columns(df, cols):
+def process_df_categorical_columns_hot(df, cols):
     """Create HOT encoded feature columns for the dataframe, based on the defined categorical columns."""
+    all_col_features = []
     for col in cols:
+        print(f"Now extracting features from column: '{col}'.")
         col_features = pd.get_dummies(df[col], prefix=col, prefix_sep='#')
-        df = pd.concat([df, col_features], axis=1, sort=False)
-        df.drop(columns=[col], inplace=True)
+        all_col_features.append(col_features)
+        print("Done!")
+    df = pd.concat([df] + all_col_features, axis=1, sort=False)
+    df.drop(columns=cols, inplace=True)
+    return df
+
+def process_df_categorical_columns_no_hot(df, cols):
+    """Create a numerically encoded feature column in the df based on each defined categorical column."""
+    all_col_features = []
+    for col in cols:
+        col_features = df.col.astype('category').cat.codes
+        all_col_features.append(col_features)
+    df = pd.concat([df] + all_col_features, axis=1, sort=False)
+    df.drop(columns=cols, inplace=True)
     return df
 
 

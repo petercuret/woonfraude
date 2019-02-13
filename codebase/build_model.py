@@ -25,43 +25,45 @@ from sklearn.linear_model import LassoCV
 from imblearn.over_sampling import ADASYN
 from imblearn.over_sampling import SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC
 from imblearn.over_sampling import RandomOverSampler
-from imblearn.base import BaseSampler
+
+# Import function to evaluate algorithm performance
+from imblearn.metrics import classification_report_imbalanced
 
 
 def impute_missing_values(df):
-	"""Impute missing values in each column (using column averages)."""
-	# Compute averages per column (not for date columns)
-	averages = dict(df.mean())
-	# Impute missing values by using column averages
-	df.fillna(value=averages, inplace=True)
+    """Impute missing values in each column (using column averages)."""
+    # Compute averages per column (not for date columns)
+    averages = dict(df.mean())
+    # Impute missing values by using column averages
+    df.fillna(value=averages, inplace=True)
 
 
 def split_data(df):
-	# Creating sets for model building and testing
-	# 1. Training set (70%) - for building the model
-	# 2. Development set a.k.a. hold-out set (15%) - for optimizing model parameters
-	# 3. Test set (15%) - For testing the performance of the tuned model
+    # Creating sets for model building and testing
+    # 1. Training set (70%) - for building the model
+    # 2. Development set a.k.a. hold-out set (15%) - for optimizing model parameters
+    # 3. Test set (15%) - For testing the performance of the tuned model
 
-	# Split data into features (X) and labels (y).
-	X = df.drop('woonfraude', axis=1)
-	y = df.woonfraude
-	print('Original dataset shape %s' % Counter(y))
+    # Split data into features (X) and labels (y).
+    X = df.drop('woonfraude', axis=1)
+    y = df.woonfraude
+    print('Original dataset shape %s' % Counter(y))
 
-	n = X.shape[0]
+    n = X.shape[0]
 
-	# Create train, dev and test sets using the feature values of the examples.
-	X_shuffled = X.sample(frac=1, random_state=0)
-	X_train_org, X_dev, X_test = np.split(X_shuffled, [int(n*.7), int(n*.85)])
+    # Create train, dev and test sets using the feature values of the examples.
+    X_shuffled = X.sample(frac=1, random_state=0)
+    X_train_org, X_dev, X_test = np.split(X_shuffled, [int(n*.7), int(n*.85)])
 
-	# Create train, dec and test sets of the corresponding example labels.
-	y_shuffled = y.sample(frac=1, random_state=0)
-	y_train_org, y_dev, y_test = np.split(y_shuffled, [int(n*.7), int(n*.85)])
+    # Create train, dec and test sets of the corresponding example labels.
+    y_shuffled = y.sample(frac=1, random_state=0)
+    y_train_org, y_dev, y_test = np.split(y_shuffled, [int(n*.7), int(n*.85)])
 
-	print('Training set shape %s' % Counter(y_train_org))
-	print('Development set shape %s' % Counter(y_dev))
-	print('Testing set shape %s' % Counter(y_test))
+    print('Training set shape %s' % Counter(y_train_org))
+    print('Development set shape %s' % Counter(y_dev))
+    print('Testing set shape %s' % Counter(y_test))
 
-	return X_train_org, X_dev, X_test, y_train_org, y_dev, y_test
+    return X_train_org, X_dev, X_test, y_train_org, y_dev, y_test
 
 
 def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
@@ -83,8 +85,6 @@ def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
         samp = SMOTENC(random_state=random_seed, categorical_features=[2])
     if sampler == 'RandomOverSampler':
         samp = RandomOverSampler(random_state=random_seed)
-    if sampler == 'BaseSampler':
-        samp = BaseSampler(random_state=random_seed)
 
     # The resulting X_train and y_train are numpy arrays.
     X_train, y_train = samp.fit_resample(X_train_org, y_train_org)
@@ -120,8 +120,9 @@ def run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11):
     # Create predictions.
     y_pred = knn.predict(X_dev)
 
-    # Compute performance statistics.
-    precision, recall, f1, conf = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    # Compute and show performance statistics.
+    # precision, recall, f1, conf = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    print(classification_report_imbalanced(y_true=y_dev, y_pred=y_pred))
 
     return knn, precision, recall, f1, conf
 
@@ -130,43 +131,44 @@ def run_lasso(X_train, y_train, X_dev, y_dev):
     """Run a lasso model. Return results"""
 
     # Fit lasso model on training data.
-    reg = LassoCV(cv=5, random_state=0).fit(X, y)
+    reg = LassoCV(cv=5, random_state=0).fit(X_train, y_train)
 
     # Create predictions.
     y_pred = reg.predict(X_dev) > 0.12
 
-    # Compute performance statistics.
-    precision, recall, f1, conf = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    # Compute and show performance statistics.
+    # precision, recall, f1, conf = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    print(classification_report_imbalanced(y_true=y_dev, y_pred=y_pred))
 
     return reg, precision, recall, f1, conf
 
 
 # def import_features():
-# 	# Import de output van extract_features.py
-# 	df = pd.read_pickle('../../data/df_adres_features.pkl')
-# 	df = df.fillna('')
-# 	df = df[df['landelijk_bag']!='']
+#     # Import de output van extract_features.py
+#     df = pd.read_pickle('../../data/df_adres_features.pkl')
+#     df = df.fillna('')
+#     df = df[df['landelijk_bag']!='']
 
-# 	print(df.head())
-# 	return df
+#     print(df.head())
+#     return df
 
 # def split_data():
-# 	# Split dataset into train and test data, make sure to do this random as the data is organised based on date
-# 	pass
+#     # Split dataset into train and test data, make sure to do this random as the data is organised based on date
+#     pass
 
 # def train_model():
-# 	# train moodel on train set
-# 	pass
+#     # train moodel on train set
+#     pass
 
 # def test_model():
-# 	# test model
-# 	pass
+#     # test model
+#     pass
 
 # def main():
-# 	import_features()
-# 	split_data()
-# 	train_model()
-# 	test_model()
+#     import_features()
+#     split_data()
+#     train_model()
+#     test_model()
 
 # if __name__ == "__main__":
 #     main()

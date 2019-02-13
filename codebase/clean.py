@@ -122,6 +122,14 @@ def add_binary_label_zaken(zaken, stadia):
     print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
 
 
+def impute_missing_values(df):
+    """Impute missing values in each column (using column averages)."""
+    # Compute averages per column (not for date columns)
+    averages = dict(df.mean())
+    # Impute missing values by using column averages
+    df.fillna(value=averages, inplace=True)
+
+
 def fix_dfs(adres, zaken, stadia):
     """Fix adres, zaken en stadia dataframes."""
 
@@ -129,6 +137,7 @@ def fix_dfs(adres, zaken, stadia):
     drop_duplicates(adres, "adres_id")
     fix_dates(adres, ['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'])
     lower_strings(adres)
+    impute_missing_values(adres)
 
     # Zaken
     drop_duplicates(zaken, "zaak_id")
@@ -137,6 +146,7 @@ def fix_dfs(adres, zaken, stadia):
     lower_strings(zaken)  # This needs to be done before add_column (we match lowercase strings)
     add_column(df=zaken, new_col='categorie', match_col='beh_oms',
                csv_path='E:/woonfraude/data/aanvulling_beh_oms.csv')
+    impute_missing_values(zaken)
 
     # Stadia
     fix_dates(stadia, ['begindatum', 'peildatum', 'einddatum', 'date_created',
@@ -148,3 +158,5 @@ def fix_dfs(adres, zaken, stadia):
     lower_strings(stadia) # This needs to be done before add_column (we match lowercase strings)
     add_column(df=stadia, new_col='label', match_col='sta_oms',
                csv_path='E:/woonfraude/data/aanvulling_sta_oms.csv')
+    impute_missing_values(stadia)
+
