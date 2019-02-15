@@ -124,8 +124,21 @@ def add_binary_label_zaken(zaken, stadia):
 
 def impute_missing_values(df):
     """Impute missing values in each column (using column averages)."""
-    # Compute averages per column (not for date columns)
-    averages = dict(df.mean())
+
+    # Compute averages per column (only for numeric columns, so not for dates or strings)
+    averages = dict(df._get_numeric_data().mean())
+
+    # Also compute averages for datetime columns
+    for col in df.select_dtypes(include=['datetime64[ns]']):
+        # Get underlying Unix timestamps for all non-null values.
+        unix = df[col][df[col].notnull()].view('int64')
+        # Compute the average unix timestamp
+        mean_unix = unix.mean()
+        # Convert back to datetime
+        mean_datetime = pd.to_datetime(mean_unix)
+        # Put value in averages column
+        averages[col] = mean_datetime
+
     # Impute missing values by using column averages
     df.fillna(value=averages, inplace=True)
 

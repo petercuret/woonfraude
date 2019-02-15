@@ -77,7 +77,7 @@ def load_dfs(version, path="E:\\woonfraude\\data\\"):
 
 
 
-def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUILD_MODEL=False):
+def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPLIT_DATA=False, BUILD_MODEL=False):
 
     # Downloads & saves tables to dataframes.
     if DOWNLOAD == True:
@@ -155,7 +155,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUI
         print("\n#### ...extracting features done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
-    if BUILD_MODEL == True:
+    if SPLIT_DATA == True:
         start = time.time()
 
         print('Loading data...')
@@ -166,14 +166,44 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, BUI
 
         print('Splitting data...')
         X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data(df)
+        X_train_org.name = 'X_train_org'
+        X_dev.name = 'X_dev'
+        X_test.name = 'X_test'
+        y_train_org.name = 'y_train_org'
+        y_dev.name = 'y_dev'
+        y_test.name = 'y_test'
+        save_dfs([X_train_org, X_dev, X_test, y_train_org, y_dev, y_test, stadia], '5')
         print('Done!')
 
-        # X_train, y_train = build_model.augment_data(X_train_org, y_train_org)
-        X_train = X_train_org
-        y_train = y_train_org
+        print("\n#### ...splitting data done! Spent %.2f seconds.\n" % (time.time()-start))
+
+
+    if BUILD_MODEL == True:
+        start = time.time()
+
+        print('Loading data...')
+        dfs = load_dfs('5')
+        X_train_org = dfs['X_train_org']
+        X_dev = dfs['X_dev']
+        X_test = dfs['X_test']
+        y_train_org = dfs['y_train_org']
+        y_dev = dfs['y_dev']
+        # y_test = dfs['y_test']
+        del dfs
+        print('Done!')
+
+        subset_size = 0.05
+        X_train = X_train_org.head(int(len(X_train_org)*subset_size))
+        del X_train_org
+        y_train = y_train_org.head(int(len(y_train_org)*subset_size))
+        del y_train_org
+        # X_train, y_train = build_model.augment_data(X_train, y_train)
+        # X_dev = X_dev.head(int(len(X_dev)*subset_size))
+        # y_dev = y_dev.head(int(len(y_dev)*subset_size))
+        # y_test = y_test.head(int(len(y_test)*subset_size))
 
         print('Training model...')
-        knn, precision, recall, f1, conf = build_model.run_lasso(X_train, y_train, X_dev, y_dev)
+        model, precision, recall, f1, conf, report = build_model.run_linear_svc(X_train, y_train, X_dev, y_dev)
         print('Training done!')
 
         print(f"Precisions: {precision}\nRecall: {recall}\nF1: {f1}\n")

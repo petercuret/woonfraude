@@ -11,31 +11,27 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 # Source this script from collect_data_and_make_model.ipynb.
 
-# Imports
+# General imports
 import os, sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import f1_score, precision_score, recall_score, precision_recall_curve, confusion_matrix
-from sklearn.linear_model import LassoCV
 
-# Samplers for handling data imbalance
+# Import ML Methods
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LassoCV
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import LinearSVC
+
+# Import samplers for handling data imbalance
 from imblearn.over_sampling import ADASYN
 from imblearn.over_sampling import SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC
 from imblearn.over_sampling import RandomOverSampler
 
-# Import function to evaluate algorithm performance
+# Import functions to evaluate algorithm performance
+from sklearn.metrics import f1_score, precision_score, recall_score, precision_recall_curve, confusion_matrix
 from imblearn.metrics import classification_report_imbalanced
-
-
-def impute_missing_values(df):
-    """Impute missing values in each column (using column averages)."""
-    # Compute averages per column (not for date columns)
-    averages = dict(df.mean())
-    # Impute missing values by using column averages
-    df.fillna(value=averages, inplace=True)
 
 
 def split_data(df):
@@ -49,6 +45,7 @@ def split_data(df):
     y = df.woonfraude
     print('Original dataset shape %s' % Counter(y))
 
+    # Compute the amount of datapoints.
     n = X.shape[0]
 
     # Create train, dev and test sets using the feature values of the examples.
@@ -59,11 +56,18 @@ def split_data(df):
     y_shuffled = y.sample(frac=1, random_state=0)
     y_train_org, y_dev, y_test = np.split(y_shuffled, [int(n*.7), int(n*.85)])
 
+
+    # Print some information about the train/dev/test set sizes.
     print('Training set shape %s' % Counter(y_train_org))
     print('Development set shape %s' % Counter(y_dev))
     print('Testing set shape %s' % Counter(y_test))
 
     return X_train_org, X_dev, X_test, y_train_org, y_dev, y_test
+
+
+def undersample(X_train_org, y_train_org):
+    # TODO: finish writing this function
+    pass
 
 
 def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
@@ -105,7 +109,9 @@ def evaluate_performance(y_pred, y_dev):
     recall = recall_score(y_dev, y_pred)
     f1 = f1_score(y_dev, y_pred)
     conf = confusion_matrix(y_dev, y_pred) / len(y_pred)
-    return precision, recall, f1, conf
+    report = classification_report_imbalanced(y_true=y_dev, y_pred=y_pred)
+    print(report)
+    return precision, recall, f1, conf, report
 
 
 def run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11):
@@ -121,10 +127,9 @@ def run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11):
     y_pred = knn.predict(X_dev)
 
     # Compute and show performance statistics.
-    # precision, recall, f1, conf = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
-    print(classification_report_imbalanced(y_true=y_dev, y_pred=y_pred))
+    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
 
-    return knn, precision, recall, f1, conf
+    return knn, precision, recall, f1, conf, report
 
 
 def run_lasso(X_train, y_train, X_dev, y_dev):
@@ -137,11 +142,41 @@ def run_lasso(X_train, y_train, X_dev, y_dev):
     y_pred = reg.predict(X_dev) > 0.12
 
     # Compute and show performance statistics.
-    # precision, recall, f1, conf = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
-    print(classification_report_imbalanced(y_true=y_dev, y_pred=y_pred))
+    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
 
-    return reg, precision, recall, f1, conf
+    return reg, precision, recall, f1, conf, report
 
+
+def run_linear_svc(X_train, y_train, X_dev, y_dev):
+    """Run linear support vector classification. Return results."""
+
+    # Fit model to training data.
+    clf = LinearSVC(random_state=0, tol=1e-5, max_iter=1000)
+    clf.fit(X_train, y_train)
+
+    # Create predictions.
+    y_pred = clf.predict(X_dev)
+
+    # Compute and show performance statistics.
+    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+
+    return clf, precision, recall, f1, conf, report
+
+
+def run_gaussian_naive_bayes(X_train, y_train, X_dev, y_dev):
+    """Run gaussian naive bayes. Return results."""
+
+    # Fit model to training data.
+    gnb = GaussianNB()
+    gnb.fit(X_train, y_train)
+
+    # Create predictions.
+    y_pred = gnb.predict(X_dev)
+
+    # Compute and show performance statistics.
+    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+
+    return gnb, precision, recall, f1, conf, report
 
 # def import_features():
 #     # Import de output van extract_features.py
