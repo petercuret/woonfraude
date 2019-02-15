@@ -192,23 +192,40 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         del dfs
         print('Done!')
 
-        subset_size = 0.05
-        X_train = X_train_org.head(int(len(X_train_org)*subset_size))
-        del X_train_org
-        y_train = y_train_org.head(int(len(y_train_org)*subset_size))
-        del y_train_org
+        # subset_size = 0.05
+        # X_train = X_train_org.head(int(len(X_train_org)*subset_size))
+        # del X_train_org
+        # y_train = y_train_org.head(int(len(y_train_org)*subset_size))
+        # del y_train_org
         # X_train, y_train = build_model.augment_data(X_train, y_train)
         # X_dev = X_dev.head(int(len(X_dev)*subset_size))
         # y_dev = y_dev.head(int(len(y_dev)*subset_size))
         # y_test = y_test.head(int(len(y_test)*subset_size))
 
-        print('Training model...')
-        model, precision, recall, f1, conf, report = build_model.run_linear_svc(X_train, y_train, X_dev, y_dev)
-        print('Training done!')
+        # Select all positive samples
+        X_train_positives = X_train_org[y_train_org == True]
+        y_train_positives = y_train_org[y_train_org == True]
 
-        print(f"Precisions: {precision}\nRecall: {recall}\nF1: {f1}\n")
-        print(conf)
-        print("\n#### ...building model done! Spent %.2f seconds.\n" % (time.time()-start))
+        # Select all negative samples
+        X_train_negatives = X_train_org[y_train_org == False]
+        y_train_negatives = y_train_org[y_train_org == False]
+
+        # Splits negative data into several
+        print('Splitting up negative samples.')
+        n_splits = 8
+        X_train_negatives_sets = np.split(X_train_negatives, n_splits)
+        y_train_negatives_sets = np.split(y_train_negatives, n_splits)
+        del X_train_negatives, y_train_negatives
+
+        # Combine each subset of the negative samples with all positive samples.
+        # Train a model on each of these new combined training sets.
+        for i in range(n_splits):
+            print(f"Training model on split {i}.")
+            X_train = pd.concat([X_train_negatives_sets[i], X_train_positives])
+            y_train = pd.concat([y_train_negatives_sets[i], y_train_positives])
+            model, precision, recall, f1, conf, report = build_model.run_knn(X_train, y_train, X_dev, y_dev)
+
+        print("\n#### ...training models done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
 if __name__ == "__main__":
