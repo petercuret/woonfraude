@@ -131,25 +131,77 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         adres = dfs['adres']
         zaken = dfs['zaken']
         stadia = dfs['stadia']
+
         # Combine adres and zaken dfs. Remove columns which are not available when cases are opened.
-        df = extract_features.prepare_data(adres, zaken)
+        df = zaken.merge(adres, on='adres_id', how='left')
+        df.drop(columns='adres_id', inplace=True)
+
+        # Extract leegstand feature.
+        df = extract_features.extract_leegstand(df)
+
         # Extract date features.
         df = extract_features.extract_date_features(df)
+
         # Extract features from columns based on word occurrence and one-hot encoding.
-        adres_cat_use =  ['postcode', 'sdl_code', 'brt_code', 'pvh_cd', 'pvh_omschr', 'sbw_omschr',
-                          'sbv_omschr', 'wzs_buurtcode_os_2015', 'wzs_buurtcombinatiecode_os_2015',
-                          'wzs_rayoncode_os_2015', 'wzs_stadsdeelcode_os_2015', 'sttnaam', 'hsltr',
-                          'toev', 'brt_naam', 'wzs_wijze_verrijking_geo', 'wzs_22gebiedencode_2015']
-        adres_cat_remove = ['wzs_buurtnaam_os_2015', 'wzs_buurtcombinatienaam_os_2015',
-                            'wzs_rayonnaam_os_2015', 'wzs_stadsdeelnaam_os_2015',
-                            'wzs_alternatieve_buurtennaam_os_2015',
-                            'wzs_alternatieve_buurtencode_os_2015', 'wzs_geom', 'brtcombi_code',
-                            'brtcombi_naam', 'sdl_naam', 'wzs_22gebiedennaam_2015']
-        zaken_cat_use = ['beh_code', 'eigenaar', 'categorie']
-        zaken_cat_remove = ['beh_oms']
+        adres_cat_use =  ['postcode',
+                          'pvh_omschr',
+                          'sbw_omschr',
+                          'sbv_omschr',
+                          'wzs_buurtcode_os_2015',
+                          'wzs_buurtcombinatiecode_os_2015',
+                          'wzs_stadsdeelcode_os_2015',
+                          'sttnaam',
+                          'toev']
+        zaken_cat_use = ['beh_code',
+                         'eigenaar',
+                         'categorie']
         df = extract_features.process_df_categorical_columns_hot(df, adres_cat_use + zaken_cat_use)
+
         # Remove superfluous columns (e.g. columns with textual descriptions of codes)
+        adres_cat_remove = [# Remove because cols to not exists when melding is received
+                            'einddatum',
+                            'wzs_update_datumtijd',
+                            'mededelingen',
+                            # Remove because cols do not add extra information.
+                            'sdl_naam',
+                            'pvh_cd',
+                            'sbv_code',
+                            'sbw_code',
+                            'wzs_wijze_verrijking_geo',
+                            'wzs_22gebiedencode_2015',
+                            'brt_naam',
+                            'wzs_buurtnaam_os_2015',
+                            'wzs_buurtcombinatienaam_os_2015',
+                            'wzs_rayonnaam_os_2015',
+                            'wzs_rayoncode_os_2015',
+                            'wzs_stadsdeelnaam_os_2015',
+                            'wzs_alternatieve_buurtennaam_os_2015',
+                            'wzs_alternatieve_buurtencode_os_2015',
+                            'hsltr',
+                            'wzs_geom',
+                            'brt_code',
+                            'brtcombi_code',
+                            'brtcombi_naam',
+                            'sdl_code',
+                            'wzs_22gebiedennaam_2015',
+                            'wzs_id',
+                            'a_dam_bag',
+                            'landelijk_bag']
+        zaken_cat_remove = [# Remove because cols to not exists when melding is received
+                            'afg_code_beh',
+                            'afs_code',
+                            'afs_oms',
+                            'afg_code_afs',
+                            'wzs_update_datumtijd',
+                            # Remove because cols do not add extra information.
+                            'beh_oms',
+                            'wzs_id']
         df.drop(columns=adres_cat_remove + zaken_cat_remove, inplace=True)
+
+        # Rescale features.
+        df = extract_features.scale_data(df, ['inwnrs', 'kmrs'])
+
+        # Name and save resulting dataframe.
         df.name = 'df'
         save_dfs([df, stadia], '4')
         print("\n#### ...extracting features done! Spent %.2f seconds.\n" % (time.time()-start))
@@ -223,7 +275,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
             print(f"Training model on split {i}.")
             X_train = pd.concat([X_train_negatives_sets[i], X_train_positives])
             y_train = pd.concat([y_train_negatives_sets[i], y_train_positives])
-            model, precision, recall, f1, conf, report = build_model.run_knn(X_train, y_train, X_dev, y_dev)
+            model, precision, recall, f1, conf, report = build_model.run_random_forest(X_train, y_train, X_dev, y_dev)
 
         print("\n#### ...training models done! Spent %.2f seconds.\n" % (time.time()-start))
 

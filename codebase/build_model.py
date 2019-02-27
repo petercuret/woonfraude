@@ -19,6 +19,9 @@ import matplotlib.pyplot as plt
 from collections import Counter
 
 # Import ML Methods
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LassoCV
 from sklearn.naive_bayes import GaussianNB
@@ -177,6 +180,44 @@ def run_gaussian_naive_bayes(X_train, y_train, X_dev, y_dev):
     precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
 
     return gnb, precision, recall, f1, conf, report
+
+
+def run_decision_tree(X_train, y_train, X_dev, y_dev):
+    """Run decision tree model. Return results."""
+
+    # Fit model to training data.
+    clf = DecisionTreeClassifier(random_state=0)
+    clf.fit(X_train, y_train)
+
+    # Create predictions.
+    y_pred = clf.predict(X_dev)
+
+    # Compute and show performance statistics.
+    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+
+    return clf, precision, recall, f1, conf, report
+
+
+def run_random_forest(X_train, y_train, X_dev, y_dev):
+    """Run decision tree model. Return results."""
+
+    # Fit model to training data.
+    clf = RandomForestClassifier(n_estimators=100, max_depth=3, random_state=0)
+    clf.fit(X_train, y_train)
+
+    # Create predictions.
+    y_pred = clf.predict(X_dev)
+
+    # Compute and show performance statistics.
+    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+
+    # Show feature importances
+    # print(clf.feature_importances_)
+
+    return clf, precision, recall, f1, conf, report
+
+
+
 
 # def import_features():
 #     # Import de output van extract_features.py

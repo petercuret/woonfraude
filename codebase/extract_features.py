@@ -16,25 +16,6 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import StandardScaler
 
-def prepare_data(adres, zaken):
-    """Combine address and cases data"""
-    # Add address information to each case (this duplicates 'wzs_id' and 'wzs_update_datumtijd').
-    df = zaken.merge(adres, on='adres_id', how='left')
-    # Remove all columns which would not yet be available when cases (zaken) are newly opened.
-    df = df.drop(columns=['einddatum', 'afg_code_beh', 'afs_code', 'afs_oms', 'afg_code_afs', 'wzs_update_datumtijd_x', 'wzs_update_datumtijd_y', 'mededelingen', 'a_dam_bag', 'landelijk_bag'])
-    # Also remove columns with more than 40% nonetype data.
-    # df.drop(columns=['hsltr', 'toev'], inplace=True)
-    # Temporarily remove the wzs_id columns (different values in adres and zaken tables)
-    df.drop(columns=['wzs_id_x', 'wzs_id_y'], inplace=True)
-    return df
-
-
-def scale_data(df):
-    # TODO: finish writing this function
-    scaler = StandardScaler
-    scaler.fit(df._get_numeric_data())
-    scaler.transform(df._get_numeric_data())
-
 
 ##################################
 ##### Features based on text #####
@@ -107,4 +88,21 @@ def extract_date_features(df):
         df[col + '_unix'] = df[col].view('int64')
         df.drop(columns=[col], inplace=True)
         print("Done!")
+    return df
+
+
+def extract_leegstand(df):
+    """Create a column indicating leegstand (no inhabitants on the address)."""
+    df['leegstand'] = (df.inwnrs == 1)
+    return df
+
+
+###########################
+##### Feature Scaling #####
+###########################
+
+def scale_data(df, cols):
+    """Scale data using the sklearn StandardScaler for the defined columns."""
+    scaler = StandardScaler()
+    df[cols] = scaler.fit(df[cols])
     return df
