@@ -117,17 +117,18 @@ def add_person_features(df, personen):
     # TODO: this step currently takes a few minutes to complete, should still be optimized.
     df['aantal_personen'] = -1
     res_keys = list(results.keys())
-    for i in range(10):
+    print("Now looping over all address ids that have a link with one or more persons...")
+    for i in df.index:
         if i % 1000 == 0:
             print(i)
         row = df.iloc[i]
         adres_id = row['adres_id']
         try:
             aantal_personen = results[adres_id][0]
-            print(nr_people)
             df.at[i, 'aantal_personen'] = aantal_personen
         except KeyError:
             pass
+    print("...done!")
 
     return df
 
