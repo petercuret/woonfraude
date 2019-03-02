@@ -143,7 +143,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         df = extract_features.extract_leegstand(df)
 
         # Add person features.
-        df = add_person_features(df, personen)
+        df = extract_features.add_person_features(df, personen)
 
         # Extract date features.
         df = extract_features.extract_date_features(df)
