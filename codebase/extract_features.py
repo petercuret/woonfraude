@@ -107,6 +107,7 @@ def add_person_features(df, personen):
 
     # Iterate over all matching address ids and find all people at each address.
     results = {}
+    print("Now looping over all address ids that have a link with one or more persons...")
     for i, id in enumerate(intersect):
         if i % 1000 == 0:
             print(i)
@@ -117,7 +118,7 @@ def add_person_features(df, personen):
     # TODO: this step currently takes a few minutes to complete, should still be optimized.
     df['aantal_personen'] = -1
     res_keys = list(results.keys())
-    print("Now looping over all address ids that have a link with one or more persons...")
+    print("Now looping over all rows in the main dataframe in order to add person information...")
     for i in df.index:
         if i % 1000 == 0:
             print(i)

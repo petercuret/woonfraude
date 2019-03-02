@@ -134,39 +134,12 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
+        # import q
+        # q.d()
 
-        # Combine adres and zaken dfs. Remove columns which are not available when cases are opened.
-        df = zaken.merge(adres, on='adres_id', how='left')
-
-        # Extract leegstand feature.
-        df = extract_features.extract_leegstand(df)
-
-        # Add person features.
-        df = extract_features.add_person_features(df, personen)
-
-        # Extract date features.
-        df = extract_features.extract_date_features(df)
-
-        # Extract features from columns based on word occurrence and one-hot encoding.
-        adres_cat_use =  ['postcode',
-                          'pvh_omschr',
-                          'sbw_omschr',
-                          'sbv_omschr',
-                          'wzs_buurtcode_os_2015',
-                          'wzs_buurtcombinatiecode_os_2015',
-                          'wzs_stadsdeelcode_os_2015',
-                          'sttnaam',
-                          'toev']
-        zaken_cat_use = ['beh_code',
-                         'eigenaar',
-                         'categorie']
-        df = extract_features.process_df_categorical_columns_hot(df, adres_cat_use + zaken_cat_use)
-
-        # Remove superfluous columns (e.g. columns with textual descriptions of codes)
-        adres_cat_remove = [# Remove because cols to not exists when melding is received
-                            'einddatum',
+        # Remove superfluous columns (e.g. columns with textual descriptions of codes etc.).
+        adres_cat_remove = [# Remove because cols do not exists when melding is received
                             'wzs_update_datumtijd',
-                            'mededelingen',
                             # Remove because cols do not add extra information.
                             'sdl_naam',
                             'pvh_cd',
@@ -192,7 +165,9 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
                             'wzs_id',
                             'a_dam_bag',
                             'landelijk_bag']
-        zaken_cat_remove = [# Remove because cols to not exists when melding is received
+        zaken_cat_remove = [# Remove because cols do not exists when melding is received
+                            'einddatum',
+                            'mededelingen',
                             'afg_code_beh',
                             'afs_code',
                             'afs_oms',
@@ -201,7 +176,35 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
                             # Remove because cols do not add extra information.
                             'beh_oms',
                             'wzs_id']
-        df.drop(columns=adres_cat_remove + zaken_cat_remove, inplace=True)
+        adres.drop(columns=adres_cat_remove, inplace=True)
+        zaken.drop(columns=zaken_cat_remove, inplace=True)
+
+        # Combine adres and zaken dfs.
+        df = zaken.merge(adres, on='adres_id', how='left')
+
+        # Extract leegstand feature.
+        df = extract_features.extract_leegstand(df)
+
+        # Add person features.
+        df = extract_features.add_person_features(df, personen)
+
+        # Extract date features.
+        df = extract_features.extract_date_features(df)
+
+        # Extract features from columns based on word occurrence and one-hot encoding.
+        adres_cat_use =  ['postcode',
+                          'pvh_omschr',
+                          'sbw_omschr',
+                          'sbv_omschr',
+                          'wzs_buurtcode_os_2015',
+                          'wzs_buurtcombinatiecode_os_2015',
+                          'wzs_stadsdeelcode_os_2015',
+                          'sttnaam',
+                          'toev']
+        zaken_cat_use = ['beh_code',
+                         'eigenaar',
+                         'categorie']
+        df = extract_features.process_df_categorical_columns_hot(df, adres_cat_use + zaken_cat_use)
 
         # Rescale features.
         df = extract_features.scale_data(df, ['inwnrs', 'kmrs'])
