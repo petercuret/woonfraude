@@ -137,7 +137,6 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
 
         # Combine adres and zaken dfs. Remove columns which are not available when cases are opened.
         df = zaken.merge(adres, on='adres_id', how='left')
-        df.drop(columns='adres_id', inplace=True)
 
         # Extract leegstand feature.
         df = extract_features.extract_leegstand(df)
@@ -206,6 +205,9 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
 
         # Rescale features.
         df = extract_features.scale_data(df, ['inwnrs', 'kmrs'])
+
+        # Remove adres_id, since this is not a feature we want our algorihtm to try and learn from.
+        df.drop(columns='adres_id', inplace=True)
 
         # Name and save resulting dataframe.
         df.name = 'df'
