@@ -89,13 +89,13 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         # adres_periodes = download_data("adres_periodes", limit=100)
         # hotline_melding = download_data("hotline_melding", limit=100)
         # hotline_bevinding = download_data("hotline_bevinding", limit=100)
-        # personen = download_data("personen", limit=100)
         # personen_huwelijk = download_data("personen_huwelijk", limit=100)
         # Name and save the dataframes.
         adres.name = 'adres'
         zaken.name = 'zaken'
         stadia.name = 'stadia'
-        save_dfs([adres, zaken, stadia], '1')
+        personen = download_data("personen")
+        save_dfs([adres, zaken, stadia, personen], '1')
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -107,8 +107,9 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         adres = dfs['adres']
         zaken = dfs['zaken']
         stadia = dfs['stadia']
+        personen = dfs['personen']
         clean.fix_dfs(adres, zaken, stadia)
-        save_dfs([adres, zaken, stadia], '2')
+        save_dfs([adres, zaken, stadia, personen], '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -119,8 +120,9 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         adres = dfs['adres']
         zaken = dfs['zaken']
         stadia = dfs['stadia']
+        personen = dfs['personen']
         clean.add_binary_label_zaken(zaken, stadia)
-        save_dfs([adres, zaken, stadia], '3')
+        save_dfs([adres, zaken, stadia, personen], '3')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -131,6 +133,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         adres = dfs['adres']
         zaken = dfs['zaken']
         stadia = dfs['stadia']
+        personen = dfs['personen']
 
         # Combine adres and zaken dfs. Remove columns which are not available when cases are opened.
         df = zaken.merge(adres, on='adres_id', how='left')
@@ -138,6 +141,9 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
 
         # Extract leegstand feature.
         df = extract_features.extract_leegstand(df)
+
+        # Add person features.
+        df = add_person_features(df, personen)
 
         # Extract date features.
         df = extract_features.extract_date_features(df)

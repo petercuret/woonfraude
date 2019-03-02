@@ -97,6 +97,40 @@ def extract_leegstand(df):
     return df
 
 
+def add_person_features(df, personen):
+    """Add features relating to persons to addresses. Currently adds nr of persons per address."""
+
+    # Find the matching address ids between the adres/zaken df and the personen df.
+    adres_ids = df.adres_id
+    personen_adres_ids = personen.ads_id_wa
+    intersect = set(adres_ids).intersection(set(personen_adres_ids))
+
+    # Iterate over all matching address ids and find all people at each address.
+    results = {}
+    for i, id in enumerate(intersect):
+        if i % 1000 == 0:
+            print(i)
+        res = personen_adres_ids[personen_adres_ids == id]
+        results[id] = (len(res), res)
+
+    # Create a new column in the dataframe showing the amount of people at each address.
+    # TODO: this step currently takes a few minutes to complete, should still be optimized.
+    df['aantal_personen'] = -1
+    res_keys = list(results.keys())
+    for i in range(10):
+        if i % 1000 == 0:
+            print(i)
+        row = df.iloc[i]
+        adres_id = row['adres_id']
+        try:
+            aantal_personen = results[adres_id][0]
+            print(nr_people)
+            df.at[i, 'aantal_personen'] = aantal_personen
+        except KeyError:
+            pass
+
+    return df
+
 ###########################
 ##### Feature Scaling #####
 ###########################
