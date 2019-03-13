@@ -1,5 +1,5 @@
 # Woonfraude Detection
-Project by: Swaan Dekkers, Saban, Ammar, Geert, Jurian, Thomas Jongstra
+Project by: Swaan Dekkers, Saban, Ammar, Geert, Jurian, Felicien, Thomas Jongstra
 
 ## Hoofdvraag
 
