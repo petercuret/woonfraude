@@ -9,6 +9,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 
 # Import statements
+from pathlib import Path
 import pandas.io.sql as sqlio
 import pandas as pd
 import psycopg2
@@ -25,19 +26,19 @@ def download_data(table, limit=9223372036854775807):
     """
     Download data from wonen server, from specific table.
 
-    Table options: "adres", "zaken", "stadia", "adres_periodes", "hotline_melding",
-                   "hotline_bevinding", "personen", "personen_huwelijk", e.a..
+    Table options: "import_adres", "import_wvs", "import_stadia", "bwv_adres_periodes",
+    "bwv_hotline_melding", "bwv_personen", "bwv_personen_huwelijk", e.a..
 
     """
 
     # Open right server connection.
-    if table in ['adres', 'zaken', 'stadia']:
-        conn = psycopg2.connect(config.server_1)
-    else:
-        conn = psycopg2.connect(config.server_2)
+    conn = psycopg2.connect(host = config.HOST,
+                            dbname = config.DB,
+                            user = config.USER,
+                            password = config.PASSWORD)
 
     # Create query to download specific table data from server.
-    sql = f"select * from public.bwv_%s limit %s;" % (table, limit)
+    sql = f"select * from public.{table} limit {limit};"
 
     # Get data & convert to dataframe.
     df = sqlio.read_sql_query(sql, conn)
@@ -52,8 +53,10 @@ def download_data(table, limit=9223372036854775807):
     return df
 
 
-def save_dfs(dfs, version, path="E:\\woonfraude\\data\\"):
+def save_dfs(dfs, version):
     """Save a version of the given dataframes to dir. Use the df names as their keys."""
+    home = str(Path.home())
+    path = f'{home}/Documents/woonfraude/data/'
     dfs[0].to_hdf(f"{path}data_{version}.h5", key=dfs[0].name, mode='w')
     if len(dfs) > 0:
         for df in dfs[1:]:
@@ -61,9 +64,11 @@ def save_dfs(dfs, version, path="E:\\woonfraude\\data\\"):
     print("Dataframes saved as version \"%s\"." % version)
 
 
-def load_dfs(version, path="E:\\woonfraude\\data\\"):
+def load_dfs(version):
     """Load a version of the dataframes from dir. Rename them (pickling removes name)."""
     # Get keys of dfs in data file.
+    home = str(Path.home())
+    path = f'{home}/Documents/woonfraude/data/'
     keys = []
     with pd.HDFStore(f"{path}data_{version}.h5") as hdf:
         keys = hdf.keys()
@@ -83,18 +88,17 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
     if DOWNLOAD == True:
         start = time.time()
         print("\n######## Starting download...\n")
-        adres = download_data('adres')
-        zaken = download_data('zaken')
-        stadia = download_data('stadia')
-        # adres_periodes = download_data("adres_periodes", limit=100)
-        # hotline_melding = download_data("hotline_melding", limit=100)
-        # hotline_bevinding = download_data("hotline_bevinding", limit=100)
-        # personen_huwelijk = download_data("personen_huwelijk", limit=100)
+        adres = download_data('import_adres')
+        zaken = download_data('import_wvs')
+        stadia = download_data('import_stadia')
+        personen = download_data("bwv_personen")
+        # hotline_melding = download_data("bwv_hotline_melding", limit=100)
+        # personen_huwelijk = download_data("bwv_personen_huwelijk", limit=100)
         # Name and save the dataframes.
         adres.name = 'adres'
         zaken.name = 'zaken'
         stadia.name = 'stadia'
-        personen = download_data("personen")
+        personen.name = 'personen'
         save_dfs([adres, zaken, stadia, personen], '1')
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
@@ -251,7 +255,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         X_test = dfs['X_test']
         y_train_org = dfs['y_train_org']
         y_dev = dfs['y_dev']
-        # y_test = dfs['y_test']
+        y_test = dfs['y_test']
         del dfs
         print('Done!')
 
@@ -273,7 +277,8 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         X_train_negatives = X_train_org[y_train_org == False]
         y_train_negatives = y_train_org[y_train_org == False]
 
-        # Splits negative data into several
+        # Splits negative data into several sets
+        import numpy as np
         print('Splitting up negative samples.')
         n_splits = 8
         X_train_negatives_sets = np.split(X_train_negatives, n_splits)

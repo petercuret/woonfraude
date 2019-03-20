@@ -21,6 +21,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 
 # Import statements
+from pathlib import Path
 import pandas as pd
 import time
 import re
@@ -146,6 +147,9 @@ def impute_missing_values(df):
 def fix_dfs(adres, zaken, stadia):
     """Fix adres, zaken en stadia dataframes."""
 
+    # Get path to home directory
+    home = str(Path.home())
+
     # Adres
     drop_duplicates(adres, "adres_id")
     fix_dates(adres, ['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'])
@@ -158,7 +162,7 @@ def fix_dfs(adres, zaken, stadia):
     clean_dates(zaken)
     lower_strings(zaken)  # This needs to be done before add_column (we match lowercase strings)
     add_column(df=zaken, new_col='categorie', match_col='beh_oms',
-               csv_path='E:/woonfraude/data/aanvulling_beh_oms.csv')
+               csv_path=f'{home}/Documents/woonfraude/data/aanvulling_beh_oms.csv')
     impute_missing_values(zaken)
 
     # Stadia
@@ -170,6 +174,6 @@ def fix_dfs(adres, zaken, stadia):
     drop_duplicates(stadia, "stadium_id")
     lower_strings(stadia) # This needs to be done before add_column (we match lowercase strings)
     add_column(df=stadia, new_col='label', match_col='sta_oms',
-               csv_path='E:/woonfraude/data/aanvulling_sta_oms.csv')
+               csv_path=f'{home}/Documents/woonfraude/data/aanvulling_sta_oms.csv')
     impute_missing_values(stadia)
 
