@@ -135,9 +135,14 @@ def select_closed_cases(adres, zaken, stadia):
     zl_zaken = zaken.loc[zaken['mask']]
 
 
-    # Select stadia which are indicative of closed cases.
+    # Indicate which stadia are indicative of closed cases.
     stadia['mask'] = stadia.sta_oms == 'rapport naar han'
     stadia['mask'] += stadia.sta_oms == 'bd naar han'
+
+    # Indicate which stadia are from before 2013. Cases linked to these stadia should be
+    # disregarded. Before 2013, 'rapport naar han' and 'bd naar han' were used inconsistently.
+    timestamp_2013 =  pd.Timestamp('2013-01-01')
+    stadia['before_2013'] = stadia.begindatum < timestamp_2013
 
     # Create groups linking cases to their stadia.
     zaak_groups = stadia.groupby('zaak_id').groups
@@ -146,7 +151,7 @@ def select_closed_cases(adres, zaken, stadia):
     keep_ids = []
     for zaak_id, stadia_ids in zaak_groups.items():
         zaak_stadia = stadia.loc[stadia_ids]
-        if sum(zaak_stadia['mask']) >= 1:
+        if sum(zaak_stadia['mask']) >= 1 and sum(zaak_stadia['before_2013']) == 0:
             keep_ids.append(zaak_id)
     rap_zaken = zaken[zaken.zaak_id.isin(keep_ids)]
 
