@@ -198,11 +198,11 @@ def run_decision_tree(X_train, y_train, X_dev, y_dev):
     return clf, precision, recall, f1, conf, report
 
 
-def run_random_forest(X_train, y_train, X_dev, y_dev):
+def run_random_forest(X_train, y_train, X_dev, y_dev, n_estimators):
     """Run decision tree model. Return results."""
 
     # Fit model to training data.
-    clf = RandomForestClassifier(n_estimators=100, max_depth=3, random_state=0)
+    clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
     clf.fit(X_train, y_train)
 
     # Create predictions.

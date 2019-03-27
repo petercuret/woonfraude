@@ -140,9 +140,6 @@ def add_person_features(df, personen):
 def scale_data(df, cols):
     """Scale data using the sklearn StandardScaler for the defined columns."""
 
-    # TODO: deze functie fixen!! Deze vult de kolommen momenteel niet met data,
-    # maar met StandardScaler objecten....
-
     scaler = StandardScaler()
     df[cols] = scaler.fit_transform(df[cols])
     return df

@@ -148,6 +148,10 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         adres_cat_remove = [# Remove because cols do not exists when melding is received
                             'wzs_update_datumtijd',
                             # Remove because cols do not add extra information.
+                            'hvv_dag_tek', # Empty column
+                            'max_vestig_dtm', # Empty column
+                            'wzs_22gebiedencode_os_2015', # Empty column
+                            'wzs_22gebiedennaam_os_2015', # Empty column
                             'sdl_naam',
                             'pvh_cd',
                             'sbv_code',
