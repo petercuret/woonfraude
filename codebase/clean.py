@@ -165,6 +165,16 @@ def select_closed_cases(adres, zaken, stadia):
     return selected_zaken
 
 
+def filter_categories(zaken):
+    """
+    Remove cases (zaken) with categories 'woningkwaliteit' or 'afdeling vergunninen beheer'.
+
+    These cases do not contain reliable samples.
+    """
+    filtered_zaken = zaken[~zaken.categorie.isin(['woningkwaliteit', 'afdeling vergunningen en beheer'])]
+    return filtered_zaken
+
+
 def add_binary_label_zaken(zaken, stadia):
     """Create a binary label defining whether there was woonfraude."""
 

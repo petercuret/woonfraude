@@ -115,6 +115,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         del dfs
         clean.fix_dfs(adres, zaken, stadia)
         zaken = clean.select_closed_cases(adres, zaken, stadia)
+        zaken = clean.filter_categories(zaken)
         zaken.name = 'zaken'
         save_dfs([adres, zaken, stadia, personen], '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
