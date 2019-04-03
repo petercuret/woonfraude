@@ -105,24 +105,6 @@ def add_column(df, new_col, match_col, csv_path, key='lcolumn', val='ncolumn'):
     print(f"Dataframe \"%s\": added column \"%s\"!" % (df.name, new_col))
 
 
-def add_binary_label_zaken(zaken, stadia):
-    """Create a binary label defining whether there was woonfraude."""
-
-    # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
-    zaken['woonfraude'] = False  # Set default value to false
-    zaken_mask = zaken.loc[zaken['afs_oms'].str.contains('zl woning is beschikbaar gekomen',
-                                                         regex=True, flags=re.IGNORECASE) == True]
-    stadia_mask = stadia.loc[stadia['sta_oms'].str.contains('rapport naar han', regex=True,
-                                                            flags=re.IGNORECASE) == True]
-    zaken_ids_1 = zaken_mask['zaak_id'].tolist()
-    zaken_ids_2 = stadia_mask['zaak_id'].tolist()
-    zaken_ids = list(set(zaken_ids_1 + zaken_ids_2))  # Get uniques
-    zaken.loc[zaken['zaak_id'].isin(zaken_ids), 'woonfraude'] = True
-
-    # Print results
-    print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
-
-
 def impute_missing_values(df):
     """Impute missing values in each column (using column averages)."""
 
@@ -142,6 +124,73 @@ def impute_missing_values(df):
 
     # Impute missing values by using column averages
     df.fillna(value=averages, inplace=True)
+
+
+def select_closed_cases(adres, zaken, stadia):
+    """Only select cases (zaken) that have 100% certainly been closed."""
+
+    # Select closed zoeklicht cases.
+    zaken['mask'] = zaken.afs_oms == 'zl woning is beschikbaar gekomen'
+    zaken['mask'] += zaken.afs_oms == 'zl geen woonfraude'
+    zl_zaken = zaken.loc[zaken['mask']]
+
+
+    # Indicate which stadia are indicative of closed cases.
+    stadia['mask'] = stadia.sta_oms == 'rapport naar han'
+    stadia['mask'] += stadia.sta_oms == 'bd naar han'
+
+    # Indicate which stadia are from before 2013. Cases linked to these stadia should be
+    # disregarded. Before 2013, 'rapport naar han' and 'bd naar han' were used inconsistently.
+    timestamp_2013 =  pd.Timestamp('2013-01-01')
+    stadia['before_2013'] = stadia.begindatum < timestamp_2013
+
+    # Create groups linking cases to their stadia.
+    zaak_groups = stadia.groupby('zaak_id').groups
+
+    # Select all closed cases based on "rapport naar han" and "bd naar han" stadia.
+    keep_ids = []
+    for zaak_id, stadia_ids in zaak_groups.items():
+        zaak_stadia = stadia.loc[stadia_ids]
+        if sum(zaak_stadia['mask']) >= 1 and sum(zaak_stadia['before_2013']) == 0:
+            keep_ids.append(zaak_id)
+    rap_zaken = zaken[zaken.zaak_id.isin(keep_ids)]
+
+    # Combine all selected cases.
+    selected_zaken = pd.concat([zl_zaken, rap_zaken], sort=True)
+
+    # Print results.
+    print(f'Selected {len(selected_zaken)} closed cases from a total of {len(zaken)} cases.')
+
+    # Only return the relevant selection of cases.
+    return selected_zaken
+
+
+def filter_categories(zaken):
+    """
+    Remove cases (zaken) with categories 'woningkwaliteit' or 'afdeling vergunninen beheer'.
+
+    These cases do not contain reliable samples.
+    """
+    filtered_zaken = zaken[~zaken.categorie.isin(['woningkwaliteit', 'afdeling vergunningen en beheer'])]
+    return filtered_zaken
+
+
+def add_binary_label_zaken(zaken, stadia):
+    """Create a binary label defining whether there was woonfraude."""
+
+    # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
+    zaken['woonfraude'] = False  # Set default value to false
+    zaken_mask = zaken.loc[zaken['afs_oms'].str.contains('zl woning is beschikbaar gekomen',
+                                                         regex=True, flags=re.IGNORECASE) == True]
+    stadia_mask = stadia.loc[stadia['sta_oms'].str.contains('rapport naar han', regex=True,
+                                                            flags=re.IGNORECASE) == True]
+    zaken_ids_1 = zaken_mask['zaak_id'].tolist()
+    zaken_ids_2 = stadia_mask['zaak_id'].tolist()
+    zaken_ids = list(set(zaken_ids_1 + zaken_ids_2))  # Get uniques
+    zaken.loc[zaken['zaak_id'].isin(zaken_ids), 'woonfraude'] = True
+
+    # Print results
+    print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
 
 
 def fix_dfs(adres, zaken, stadia):

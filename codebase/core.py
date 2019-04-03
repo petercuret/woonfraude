@@ -112,7 +112,11 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
+        del dfs
         clean.fix_dfs(adres, zaken, stadia)
+        zaken = clean.select_closed_cases(adres, zaken, stadia)
+        zaken = clean.filter_categories(zaken)
+        zaken.name = 'zaken'
         save_dfs([adres, zaken, stadia, personen], '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
@@ -125,6 +129,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
+        del dfs
         clean.add_binary_label_zaken(zaken, stadia)
         save_dfs([adres, zaken, stadia, personen], '3')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
@@ -138,13 +143,16 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
-        # import q
-        # q.d()
+        del dfs
 
         # Remove superfluous columns (e.g. columns with textual descriptions of codes etc.).
         adres_cat_remove = [# Remove because cols do not exists when melding is received
                             'wzs_update_datumtijd',
                             # Remove because cols do not add extra information.
+                            'hvv_dag_tek', # Empty column
+                            'max_vestig_dtm', # Empty column
+                            'wzs_22gebiedencode_os_2015', # Empty column
+                            'wzs_22gebiedennaam_os_2015', # Empty column
                             'sdl_naam',
                             'pvh_cd',
                             'sbv_code',
@@ -229,6 +237,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         dfs = load_dfs('4')
         df = dfs['df']
         stadia = dfs['stadia']
+        del dfs
         print('Done!')
 
         print('Splitting data...')

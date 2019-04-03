@@ -139,6 +139,7 @@ def add_person_features(df, personen):
 
 def scale_data(df, cols):
     """Scale data using the sklearn StandardScaler for the defined columns."""
+
     scaler = StandardScaler()
-    df[cols] = scaler.fit(df[cols])
+    df[cols] = scaler.fit_transform(df[cols])
     return df

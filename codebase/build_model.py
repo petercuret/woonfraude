@@ -31,9 +31,10 @@ from sklearn.svm import LinearSVC
 from imblearn.over_sampling import ADASYN
 from imblearn.over_sampling import SMOTE, BorderlineSMOTE, SVMSMOTE, SMOTENC
 from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import ClusterCentroids, RandomUnderSampler, AllKNN, NeighbourhoodCleaningRule, InstanceHardnessThreshold
 
 # Import functions to evaluate algorithm performance
-from sklearn.metrics import f1_score, precision_score, recall_score, precision_recall_curve, confusion_matrix
+from sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score, precision_recall_curve, confusion_matrix
 from imblearn.metrics import classification_report_imbalanced
 
 
@@ -68,9 +69,21 @@ def split_data(df):
     return X_train_org, X_dev, X_test, y_train_org, y_dev, y_test
 
 
-def undersample(X_train_org, y_train_org):
-    # TODO: finish writing this function
-    pass
+def undersample(X_train_org, y_train_org, sampler='AllKNN', size=1000):
+    """Undersample the training set data using one of various techniques."""
+
+    # Select a sampler type.
+    if sampler == "RandomUnderSampler":
+        samp = RandomUnderSampler(sampling_strategy = {True: size, False: size})
+    if sampler == 'AllKNN':
+        samp = AllKNN()
+
+    # Resample the data using the selected sampler.
+    X_train, y_train = samp.fit_resample(X_train_org, y_train_org)
+    print(sorted(Counter(y_train).items()))
+
+    return X_train, y_train
+
 
 
 def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
@@ -82,6 +95,8 @@ def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
     # Pick sampler based on variable setting.
     if sampler == 'ADASYN':
         samp = ADASYN(random_state=random_seed)
+    if sampler == 'ADASYN_TEST':
+        samp = ADASYN(sampling_strategy = {True: 40000, False: 20000}, random_state=random_seed, n_jobs=8)
     if sampler == 'SMOTE':
         samp = SMOTE(random_state=random_seed)
     if sampler == 'BorderlineSMOTE':
@@ -106,15 +121,17 @@ def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
     return X_train, y_train
 
 
-def evaluate_performance(y_pred, y_dev):
+def evaluate_performance(y_pred, y_label):
     """Compute and return the prediction performance."""
-    precision = precision_score(y_dev, y_pred)
-    recall = recall_score(y_dev, y_pred)
-    f1 = f1_score(y_dev, y_pred)
-    conf = confusion_matrix(y_dev, y_pred) / len(y_pred)
-    report = classification_report_imbalanced(y_true=y_dev, y_pred=y_pred)
+    precision = precision_score(y_label, y_pred)
+    recall = recall_score(y_label, y_pred)
+    f1 = f1_score(y_label, y_pred)
+    f05 = fbeta_score(y_label, y_pred, beta=0.5)
+    conf = confusion_matrix(y_label, y_pred) / len(y_pred)
+    report = classification_report_imbalanced(y_true=y_label, y_pred=y_pred)
     print(report)
-    return precision, recall, f1, conf, report
+    print(f'f1: {f1} // f0.5: {f05}')
+    return precision, recall, f1, f05, conf, report
 
 
 def run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11):
@@ -130,9 +147,9 @@ def run_knn(X_train, y_train, X_dev, y_dev, n_neighbors=11):
     y_pred = knn.predict(X_dev)
 
     # Compute and show performance statistics.
-    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
 
-    return knn, precision, recall, f1, conf, report
+    return knn, precision, recall, f1, f05, conf, report
 
 
 def run_lasso(X_train, y_train, X_dev, y_dev):
@@ -145,9 +162,9 @@ def run_lasso(X_train, y_train, X_dev, y_dev):
     y_pred = reg.predict(X_dev) > 0.12
 
     # Compute and show performance statistics.
-    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
 
-    return reg, precision, recall, f1, conf, report
+    return reg, precision, recall, f1, f05, conf, report
 
 
 def run_linear_svc(X_train, y_train, X_dev, y_dev):
@@ -161,9 +178,9 @@ def run_linear_svc(X_train, y_train, X_dev, y_dev):
     y_pred = clf.predict(X_dev)
 
     # Compute and show performance statistics.
-    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
 
-    return clf, precision, recall, f1, conf, report
+    return clf, precision, recall, f1, f05, conf, report
 
 
 def run_gaussian_naive_bayes(X_train, y_train, X_dev, y_dev):
@@ -177,9 +194,9 @@ def run_gaussian_naive_bayes(X_train, y_train, X_dev, y_dev):
     y_pred = gnb.predict(X_dev)
 
     # Compute and show performance statistics.
-    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
 
-    return gnb, precision, recall, f1, conf, report
+    return gnb, precision, recall, f1, f05, conf, report
 
 
 def run_decision_tree(X_train, y_train, X_dev, y_dev):
@@ -193,28 +210,28 @@ def run_decision_tree(X_train, y_train, X_dev, y_dev):
     y_pred = clf.predict(X_dev)
 
     # Compute and show performance statistics.
-    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
 
-    return clf, precision, recall, f1, conf, report
+    return clf, precision, recall, f1, f05, conf, report
 
 
-def run_random_forest(X_train, y_train, X_dev, y_dev):
+def run_random_forest(X_train, y_train, X_dev, y_dev, n_estimators, class_weight):
     """Run decision tree model. Return results."""
 
     # Fit model to training data.
-    clf = RandomForestClassifier(n_estimators=100, max_depth=3, random_state=0)
+    clf = RandomForestClassifier(n_estimators=n_estimators, class_weight=class_weight)
     clf.fit(X_train, y_train)
 
     # Create predictions.
     y_pred = clf.predict(X_dev)
 
     # Compute and show performance statistics.
-    precision, recall, f1, conf, report = evaluate_performance(y_pred=y_pred, y_dev=y_dev)
+    precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
 
     # Show feature importances
     # print(clf.feature_importances_)
 
-    return clf, precision, recall, f1, conf, report
+    return clf, precision, recall, f1, f05, conf, report
 
 
 
