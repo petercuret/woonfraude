@@ -95,22 +95,6 @@ def enrich_row(x, df):
     x['toegang_id'] = df['toegang_id']
     return x
 
-def match_bag_bwv(x, bag):
-    df_x = []
-    df_x = bag[(bag['_openbare_ruimte_naam'] == x['sttnaam']) & (bag['_huisnummer'] == x['hsnr']) & (bag['_huisletter'] == x['hsltr']) & (bag['_huisnummer_toevoeging'] == x['toev'])]
-    x['len_df_new'] = len(df_x)
-    if len(df_x) == 1:
-        x = enrich_row(x, df_x.iloc[0])
-        
-    else:
-        df_y = bag[(bag['_openbare_ruimte_naam'] == x['sttnaam']) & (bag['_huisnummer'] == x['hsnr'])]
-
-        if len(df_y) == 1:
-            x['len_df_new'] = len(df_y)
-            x = enrich_row(x, df_y.iloc[0])
-            
-    return x
-
 def replace_string_nan_bag(bag):
 	bag['_huisnummer'] = bag['_huisnummer'].replace(-1, np.nan)
 	bag['_huisletter'] = bag['_huisletter'].replace('None', np.nan)
@@ -125,6 +109,29 @@ def replace_string_nan_adres(adres):
 	adres['toev'] = adres['toev'].replace('None', np.nan)
 	return adres
 
+def match_bwv_bag(adres, bag):
+	# Merge dataframes on adres dataframe
+	new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam', '_huisnummer'])
+
+	# Find id's that have a direct match and that have multiple matches
+	g = new_df.groupby('adres_id')
+	df_direct = g.filter(lambda x: len(x) == 1)
+	df_multiple = g.filter(lambda x: len(x) > 1)
+
+	# Make multiplematch more specific to construct perfect match
+	df_multiple = df_multiple[(df_multiple.hsltr == df_multiple._huisletter) & (df_multiple.toev == df_multiple._huisnummer_toevoeging)]
+
+	# Concat df_direct and df_multiple
+	df_result = pd.concat([df_direct, df_multiple])
+
+	# Because of the seperation of an object, there are two matching objects. Keep the oldest object with definif point
+	df_result = df_result.sort_values(['adres_id', 'status_coordinaat_code'])
+	df_result = df_result[df_result['adres_id'].duplicated()]
+	# Add adresses without match
+	final_df = pd.merge(adres, df_result,  how='left', on='adres_id')
+
+	return final_df
+
 def adres_bag_enrich(adres):
 	print('laod')
 	bag = load_bag_data()
@@ -132,13 +139,13 @@ def adres_bag_enrich(adres):
 	bag = prepare_bag(bag)
 	adres = prepare_adres(adres)
 	print('match')
-	adres = adres.apply(lambda x: match_bag_bwv(x, bag), axis=1)
+	adres = match_bwv_bag(adres, bag)
 	print('replace bag')
 	bag = replace_string_nan_bag(bag)
 	print('replace adres')
 	adres = replace_string_nan_adres(adres)
 	print('done')
-	adres.name = adres
+	adres.name = 'adres'
 
 	return adres
 
@@ -152,8 +159,7 @@ def main():
     # Load BAG data
     adres = adres_bag_enrich(adres)
     print('save')
-    #core.save_dfs([adres], '12')
-    adres.to_pickle('adres_12.pkl')
+    core.save_dfs([adres], '13')
     # Save data to new pickle files.
     
 
