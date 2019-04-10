@@ -38,7 +38,7 @@ from sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score
 from imblearn.metrics import classification_report_imbalanced
 
 
-def split_data(df):
+def split_data_train_dev_test(df):
     # Creating sets for model building and testing
     # 1. Training set (70%) - for building the model
     # 2. Development set a.k.a. hold-out set (15%) - for optimizing model parameters
@@ -54,19 +54,48 @@ def split_data(df):
 
     # Create train, dev and test sets using the feature values of the examples.
     X_shuffled = X.sample(frac=1, random_state=0)
-    X_train_org, X_dev, X_test = np.split(X_shuffled, [int(n*.7), int(n*.85)])
+    X_train, X_dev, X_test = np.split(X_shuffled, [int(n*.7), int(n*.85)])
 
-    # Create train, dec and test sets of the corresponding example labels.
+    # Create train, dev and test sets of the corresponding example labels.
     y_shuffled = y.sample(frac=1, random_state=0)
-    y_train_org, y_dev, y_test = np.split(y_shuffled, [int(n*.7), int(n*.85)])
+    y_train, y_dev, y_test = np.split(y_shuffled, [int(n*.7), int(n*.85)])
 
 
     # Print some information about the train/dev/test set sizes.
-    print('Training set shape %s' % Counter(y_train_org))
+    print('Training set shape %s' % Counter(y_train))
     print('Development set shape %s' % Counter(y_dev))
     print('Testing set shape %s' % Counter(y_test))
 
-    return X_train_org, X_dev, X_test, y_train_org, y_dev, y_test
+    return X_train, X_dev, X_test, y_train, y_dev, y_test
+
+
+def split_data_train_test(df):
+    # Creating sets for model building and testing
+    # 1. Training set (85%) - for use with cross-validations
+    # 2. Test set (15%) - For possibly testing the performance of any tuned models
+
+    # Split data into features (X) and labels (y).
+    X = df.drop('woonfraude', axis=1)
+    y = df.woonfraude
+    print('Original dataset shape %s' % Counter(y))
+
+    # Compute the amount of datapoints.
+    n = X.shape[0]
+
+    # Create train and test sets using the feature values of the examples.
+    X_shuffled = X.sample(frac=1, random_state=0)
+    X_train, X_test = np.split(X_shuffled, [int(n*.85)])
+
+    # Create train and test sets of the corresponding example labels.
+    y_shuffled = y.sample(frac=1, random_state=0)
+    y_train, y_test = np.split(y_shuffled, [int(n*.85)])
+
+
+    # Print some information about the train/test set sizes.
+    print('Training set shape %s' % Counter(y_train))
+    print('Testing set shape %s' % Counter(y_test))
+
+    return X_train, X_test, y_train, y_test
 
 
 def undersample(X_train_org, y_train_org, sampler='AllKNN', size=1000):
@@ -215,11 +244,13 @@ def run_decision_tree(X_train, y_train, X_dev, y_dev):
     return clf, precision, recall, f1, f05, conf, report
 
 
-def run_random_forest(X_train, y_train, X_dev, y_dev, n_estimators, class_weight):
+def run_random_forest(X_train, y_train, X_dev, y_dev, n_estimators, max_features, min_samples_leaf,
+    min_samples_split, bootstrap, criterion):
     """Run decision tree model. Return results."""
 
     # Fit model to training data.
-    clf = RandomForestClassifier(n_estimators=n_estimators, class_weight=class_weight)
+    clf = RandomForestClassifier(n_estimators=n_estimators, max_features=max_features,
+        min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap, criterion=criterion)
     clf.fit(X_train, y_train)
 
     # Create predictions.
