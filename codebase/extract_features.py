@@ -128,16 +128,16 @@ def add_person_features(df, personen):
 
     # Create a new column in the dataframe showing the amount of people at each address.
     # TODO: this step currently takes a few minutes to complete, should still be optimized.
-    df['aantal_personen'] = -1
+    df['aantal_personen'] = 0
     df['leeftijd_jongste_persoon'] = -1.
     df['leeftijd_oudste_persoon'] = -1.
-    df['aantal_kinderen'] = -1
+    df['aantal_kinderen'] = 0
     df['percentage_kinderen'] = -1.
-    df['aantal_mannen'] = -1
+    df['aantal_mannen'] = 0
     df['percentage_mannen'] = -1.
     df['gemiddelde_leeftijd'] = -1.
-    df['stdev_leeftijd'] = -1.
-    df['aantal_achternamen'] = -1
+    df['stdev_leeftijd'] = 0
+    df['aantal_achternamen'] = 0
     df['percentage_achternamen'] = -1.
     print("Now looping over all rows in the main dataframe in order to add person information...")
     for i in df.index:
