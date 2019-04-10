@@ -13,6 +13,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 # Imports
 import pandas as pd
 import numpy as np
+import math
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import StandardScaler
 
@@ -100,24 +101,44 @@ def extract_leegstand(df):
 def add_person_features(df, personen):
     """Add features relating to persons to addresses. Currently adds nr of persons per address."""
 
+    # Compute age of people in years (float)
+    today = pd.to_datetime('today')
+    # Set all dates within range allowed by Pandas (584 years?)
+    personen['geboortedatum'] = pd.to_datetime(personen['geboortedatum'], errors='coerce')
+    # Get the most frequent birthdate (mode).
+    geboortedatum_mode = personen['geboortedatum'].mode()[0]
+    # Compute the age (result is a TimeDelta).
+    personen['leeftijd'] = today - personen['geboortedatum']
+    # Convert the age to an approximation in years ("smearin out" the leap years).
+    personen['leeftijd'] = personen['leeftijd'].apply(lambda x: x.days / 365.25)
+
+
     # Find the matching address ids between the adres/zaken df and the personen df.
     adres_ids = df.adres_id
     personen_adres_ids = personen.ads_id_wa
     intersect = set(adres_ids).intersection(set(personen_adres_ids))
 
     # Iterate over all matching address ids and find all people at each address.
-    results = {}
-    print("Now looping over all address ids that have a link with one or more persons...")
-    for i, id in enumerate(intersect):
+    inhabitant_locs = {}
+    print("Now looping over all address ids that have a link with one or more inhabitants...")
+    for i, adres_id in enumerate(intersect):
         if i % 1000 == 0:
             print(i)
-        res = personen_adres_ids[personen_adres_ids == id]
-        results[id] = (len(res), res)
+        inhabitant_locs[adres_id] = personen_adres_ids[personen_adres_ids == adres_id]
 
     # Create a new column in the dataframe showing the amount of people at each address.
     # TODO: this step currently takes a few minutes to complete, should still be optimized.
     df['aantal_personen'] = -1
-    res_keys = list(results.keys())
+    df['leeftijd_jongste_persoon'] = -1.
+    df['leeftijd_oudste_persoon'] = -1.
+    df['aantal_kinderen'] = -1
+    df['percentage_kinderen'] = -1.
+    df['aantal_mannen'] = -1
+    df['percentage_mannen'] = -1.
+    df['gemiddelde_leeftijd'] = -1.
+    df['stdev_leeftijd'] = -1.
+    df['aantal_achternamen'] = -1
+    df['percentage_achternamen'] = -1.
     print("Now looping over all rows in the main dataframe in order to add person information...")
     for i in df.index:
         if i % 1000 == 0:
@@ -125,8 +146,45 @@ def add_person_features(df, personen):
         row = df.iloc[i]
         adres_id = row['adres_id']
         try:
-            aantal_personen = results[adres_id][0]
+            # Get the inhabitants for the current address
+            inhab_locs = inhabitant_locs[adres_id].keys()
+            inhab = personen.loc[inhab_locs]
+
+            # Totaal aantal personen (int)
+            aantal_personen = len(inhab)
             df.at[i, 'aantal_personen'] = aantal_personen
+
+            # Leeftijd jongste persoon (float)
+            leeftijd_jongste_persoon = min(inhab['leeftijd'])
+            df.at[i, 'leeftijd_jongste_persoon'] = leeftijd_jongste_persoon
+
+            # Leeftijd oudste persoon (float)
+            leeftijd_oudste_persoon = max(inhab['leeftijd'])
+            df.at[i, 'leeftijd_oudste_persoon'] = leeftijd_oudste_persoon
+
+            # Aantal kinderen ingeschreven op adres (int)
+            aantal_kinderen = sum(inhab['leeftijd'] < 18)
+            df.at[i, 'aantal_kinderen'] = aantal_kinderen
+            df.at[i, 'percentage_kinderen'] = aantal_kinderen / aantal_personen
+
+            # Aantal mannen (float)
+            aantal_mannen = sum(inhab.geslacht == 'M')
+            df.at[i, 'aantal_mannen'] = aantal_mannen
+            df.at[i, 'percentage_mannen'] = aantal_mannen / aantal_personen
+
+            # Gemiddelde leeftijd (float)
+            gemiddelde_leeftijd = inhab.leeftijd.mean()
+            df.at[i, 'gemiddelde_leeftijd'] = gemiddelde_leeftijd
+
+            # Standardeviatie van leeftijd (float). Set to 0 when the sample size is 1.
+            stdev_leeftijd = inhab.leeftijd.std()
+            df.at[i, 'stdev_leeftijd'] = stdev_leeftijd if aantal_personen > 1 else 0
+
+            # Aantal verschillende achternamen / aantal mensen (float)
+            aantal_achternamen = inhab.naam.nunique()
+            df.at[i, 'aantal_achternamen'] = aantal_achternamen
+            df.at[i, 'percentage_achternamen'] = aantal_achternamen / aantal_personen
+
         except KeyError:
             pass
     print("...done!")

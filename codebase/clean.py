@@ -193,7 +193,7 @@ def add_binary_label_zaken(zaken, stadia):
     print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
 
 
-def fix_dfs(adres, zaken, stadia):
+def fix_dfs(adres, zaken, stadia, personen):
     """Fix adres, zaken en stadia dataframes."""
 
     # Get path to home directory
@@ -226,3 +226,5 @@ def fix_dfs(adres, zaken, stadia):
                csv_path=f'{home}/Documents/woonfraude/data/aanvulling_sta_oms.csv')
     impute_missing_values(stadia)
 
+    # Personen
+    personen.drop_duplicates(subset='id', inplace=True)  # Remove duplicate persons.

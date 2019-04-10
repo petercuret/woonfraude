@@ -113,7 +113,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         stadia = dfs['stadia']
         personen = dfs['personen']
         del dfs
-        clean.fix_dfs(adres, zaken, stadia)
+        clean.fix_dfs(adres, zaken, stadia, personen)
         zaken = clean.select_closed_cases(adres, zaken, stadia)
         zaken = clean.filter_categories(zaken)
         zaken.name = 'zaken'
@@ -241,7 +241,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         print('Done!')
 
         print('Splitting data...')
-        X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data(df)
+        X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data_train_dev_test(df)
         X_train_org.name = 'X_train_org'
         X_dev.name = 'X_dev'
         X_test.name = 'X_test'
