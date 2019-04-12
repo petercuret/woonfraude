@@ -136,11 +136,14 @@ def add_person_features(df, personen):
     df['aantal_mannen'] = 0
     df['percentage_mannen'] = -1.
     df['gemiddelde_leeftijd'] = -1.
-    df['stdev_leeftijd'] = 0
+    df['stdev_leeftijd'] = -1.
     df['aantal_achternamen'] = 0
     df['percentage_achternamen'] = -1.
+    for i in range(1,8):
+        df[f'gezinsverhouding_{i}'] = 0
+        df[f'percentage_gezinsverhouding_{i}'] = 0.
     print("Now looping over all rows in the main dataframe in order to add person information...")
-    for i in df.index:
+    for i in df.index[:10]:
         if i % 1000 == 0:
             print(i)
         row = df.iloc[i]
@@ -162,12 +165,12 @@ def add_person_features(df, personen):
             leeftijd_oudste_persoon = max(inhab['leeftijd'])
             df.at[i, 'leeftijd_oudste_persoon'] = leeftijd_oudste_persoon
 
-            # Aantal kinderen ingeschreven op adres (int)
+            # Aantal kinderen ingeschreven op adres (int/float)
             aantal_kinderen = sum(inhab['leeftijd'] < 18)
             df.at[i, 'aantal_kinderen'] = aantal_kinderen
             df.at[i, 'percentage_kinderen'] = aantal_kinderen / aantal_personen
 
-            # Aantal mannen (float)
+            # Aantal mannen (int/float)
             aantal_mannen = sum(inhab.geslacht == 'M')
             df.at[i, 'aantal_mannen'] = aantal_mannen
             df.at[i, 'percentage_mannen'] = aantal_mannen / aantal_personen
@@ -180,10 +183,17 @@ def add_person_features(df, personen):
             stdev_leeftijd = inhab.leeftijd.std()
             df.at[i, 'stdev_leeftijd'] = stdev_leeftijd if aantal_personen > 1 else 0
 
-            # Aantal verschillende achternamen / aantal mensen (float)
+            # Aantal verschillende achternamen (int/float)
             aantal_achternamen = inhab.naam.nunique()
             df.at[i, 'aantal_achternamen'] = aantal_achternamen
             df.at[i, 'percentage_achternamen'] = aantal_achternamen / aantal_personen
+
+            # Gezinsverhouding (frequency count per klasse) (int/float)
+            gezinsverhouding = inhab.gezinsverhouding.value_counts()
+            for key in gezinsverhouding.keys():
+                val = gezinsverhouding[key]
+                df.at[i, f'gezinsverhouding_{key}'] = val
+                df.at[i, f'percentage_gezinsverhouding_{key}'] = val / aantal_personen
 
         except KeyError:
             pass
