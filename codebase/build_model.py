@@ -114,7 +114,6 @@ def undersample(X_train_org, y_train_org, sampler='AllKNN', size=1000):
     return X_train, y_train
 
 
-
 def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
     """Synthesize more positive samples using one of various techniques (ADASYN, SMOTE, etc.)"""
 

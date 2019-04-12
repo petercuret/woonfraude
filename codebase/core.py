@@ -17,8 +17,9 @@ import pickle
 import time
 
 # Import own modules
-import clean
 import config  # Load local passwords (config.py file expected in same folder as this file).
+import clean
+import enrich
 import extract_features
 import build_model
 
@@ -31,11 +32,18 @@ def download_data(table, limit=9223372036854775807):
 
     """
 
-    # Open right server connection.
-    conn = psycopg2.connect(host = config.HOST,
-                            dbname = config.DB,
-                            user = config.USER,
-                            password = config.PASSWORD)
+    # Create a server connection.
+    if table in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen']:
+        conn = psycopg2.connect(host = config.HOST,
+                                dbname = config.DB,
+                                user = config.USER,
+                                password = config.PASSWORD)
+
+    if table in ['bag_verblijfsobject']:
+        conn = psycopg2.connect(host = config.BAG_HOST,
+                        dbname = config.BAG_DB,
+                        user = config.BAG_USER,
+                        password = config.BAG_PASSWORD)
 
     # Create query to download specific table data from server.
     sql = f"select * from public.{table} limit {limit};"
@@ -82,7 +90,7 @@ def load_dfs(version):
 
 
 
-def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPLIT_DATA=False, BUILD_MODEL=False):
+def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPLIT_DATA=False, BUILD_MODEL=False):
 
     # Downloads & saves tables to dataframes.
     if DOWNLOAD == True:
@@ -92,6 +100,8 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         zaken = download_data('import_wvs')
         stadia = download_data('import_stadia')
         personen = download_data("bwv_personen")
+        bag = download_data('bag_verblijfsobject')
+        bag = bag.add_suffix('@bag')
         # hotline_melding = download_data("bwv_hotline_melding", limit=100)
         # personen_huwelijk = download_data("bwv_personen_huwelijk", limit=100)
         # Name and save the dataframes.
@@ -99,7 +109,8 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         zaken.name = 'zaken'
         stadia.name = 'stadia'
         personen.name = 'personen'
-        save_dfs([adres, zaken, stadia, personen], '1')
+        bag.name = 'bag'
+        save_dfs([adres, zaken, stadia, personen, bag], '1')
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -112,33 +123,47 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
+        bag = dfs['bag']
         del dfs
         clean.fix_dfs(adres, zaken, stadia, personen)
         zaken = clean.select_closed_cases(adres, zaken, stadia)
         zaken = clean.filter_categories(zaken)
         zaken.name = 'zaken'
-        save_dfs([adres, zaken, stadia, personen], '2')
+        save_dfs([adres, zaken, stadia, personen, bag], '2')
         print("\n#### ...fix done! Spent %.2f seconds.\n" % (time.time()-start))
 
+    if ENRICH == True:
+        start = time.time()
+        print("\n######## Starting BAG enrichment...\n")
+        dfs = load_dfs('2')
+        adres = dfs['adres']
+        zaken = dfs['zaken']
+        stadia = dfs['stadia']
+        personen = dfs['personen']
+        bag = dfs['bag']
+        adres = enrich.adres_bag_enrich(adres, bag)
+        del dfs
+        save_dfs([adres, zaken, stadia, personen], '3')
+        print("\n#### ...BAG enrichment done! Spent %.2f seconds.\n" % (time.time()-start))
 
     if ADD_LABEL == True:
         start = time.time()
         print("\n######## Starting to add label...\n")
-        dfs = load_dfs('2')
+        dfs = load_dfs('3')
         adres = dfs['adres']
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
         del dfs
         clean.add_binary_label_zaken(zaken, stadia)
-        save_dfs([adres, zaken, stadia, personen], '3')
+        save_dfs([adres, zaken, stadia, personen], '4')
         print("\n#### ...adding label done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
     if EXTRACT_FEATURES == True:
         start = time.time()
         print("\n######## Starting to extract features...\n")
-        dfs = load_dfs('3')
+        dfs = load_dfs('4')
         adres = dfs['adres']
         zaken = dfs['zaken']
         stadia = dfs['stadia']
@@ -226,7 +251,7 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
 
         # Name and save resulting dataframe.
         df.name = 'df'
-        save_dfs([df, stadia], '4')
+        save_dfs([df], '5')
         print("\n#### ...extracting features done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -234,21 +259,18 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         start = time.time()
 
         print('Loading data...')
-        dfs = load_dfs('4')
+        dfs = load_dfs('5')
         df = dfs['df']
-        stadia = dfs['stadia']
         del dfs
         print('Done!')
 
         print('Splitting data...')
-        X_train_org, X_dev, X_test, y_train_org, y_dev, y_test = build_model.split_data_train_dev_test(df)
-        X_train_org.name = 'X_train_org'
-        X_dev.name = 'X_dev'
+        X_train, X_test, y_train, y_test = build_model.split_data_train_test(df)
+        X_train.name = 'X_train'
         X_test.name = 'X_test'
-        y_train_org.name = 'y_train_org'
-        y_dev.name = 'y_dev'
+        y_train.name = 'y_train'
         y_test.name = 'y_test'
-        save_dfs([X_train_org, X_dev, X_test, y_train_org, y_dev, y_test, stadia], '5')
+        save_dfs([X_train, X_test, y_train, y_test], '6')
         print('Done!')
 
         print("\n#### ...splitting data done! Spent %.2f seconds.\n" % (time.time()-start))
@@ -258,51 +280,15 @@ def main(DOWNLOAD=False, FIX=False, ADD_LABEL=False, EXTRACT_FEATURES=False, SPL
         start = time.time()
 
         print('Loading data...')
-        dfs = load_dfs('5')
-        X_train_org = dfs['X_train_org']
-        X_dev = dfs['X_dev']
+        dfs = load_dfs('6')
+        X_train = dfs['X_train']
         X_test = dfs['X_test']
-        y_train_org = dfs['y_train_org']
-        y_dev = dfs['y_dev']
+        y_train = dfs['y_train']
         y_test = dfs['y_test']
         del dfs
         print('Done!')
 
-        # subset_size = 0.05
-        # X_train = X_train_org.head(int(len(X_train_org)*subset_size))
-        # del X_train_org
-        # y_train = y_train_org.head(int(len(y_train_org)*subset_size))
-        # del y_train_org
-        # X_train, y_train = build_model.augment_data(X_train, y_train)
-        # X_dev = X_dev.head(int(len(X_dev)*subset_size))
-        # y_dev = y_dev.head(int(len(y_dev)*subset_size))
-        # y_test = y_test.head(int(len(y_test)*subset_size))
-
-        # Select all positive samples
-        X_train_positives = X_train_org[y_train_org == True]
-        y_train_positives = y_train_org[y_train_org == True]
-
-        # Select all negative samples
-        X_train_negatives = X_train_org[y_train_org == False]
-        y_train_negatives = y_train_org[y_train_org == False]
-
-        # Splits negative data into several sets
-        import numpy as np
-        print('Splitting up negative samples.')
-        n_splits = 8
-        X_train_negatives_sets = np.split(X_train_negatives, n_splits)
-        y_train_negatives_sets = np.split(y_train_negatives, n_splits)
-        del X_train_negatives, y_train_negatives
-
-        # Combine each subset of the negative samples with all positive samples.
-        # Train a model on each of these new combined training sets.
-        for i in range(n_splits):
-            print(f"Training model on split {i}.")
-            X_train = pd.concat([X_train_negatives_sets[i], X_train_positives])
-            y_train = pd.concat([y_train_negatives_sets[i], y_train_positives])
-            model, precision, recall, f1, conf, report = build_model.run_random_forest(X_train, y_train, X_dev, y_dev)
-
-        print("\n#### ...training models done! Spent %.2f seconds.\n" % (time.time()-start))
+        # TO BE FINISHED!
 
 
 if __name__ == "__main__":

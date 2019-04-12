@@ -20,17 +20,6 @@ import pandas as pd
 import psycopg2
 import numpy as np
 
-# Import own modules
-import core
-
-def load_bag_data():
-	# Open right server connection
-	conn = psycopg2.connect(database='bag', host='85.222.227.107', user='vao_reader', password='XgmrIt44vanFQGy')
-	sql=f"select * from public.bag_verblijfsobject"
-	bag = sqlio.read_sql_query(sql, conn)
-	bag = bag.add_suffix('@bag')
-	conn.close()
-	return bag
 
 def prepare_bag(bag):
 	# To lower
@@ -50,7 +39,7 @@ def prepare_bag(bag):
 	bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].replace('', 'None')
 
 	bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].fillna('None')
-	bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('', 'None') 
+	bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('', 'None')
 
 	return bag
 
@@ -107,33 +96,20 @@ def match_bwv_bag(adres, bag):
 	final_df = pd.merge(adres, df_result,  how='left', on='adres_id', suffixes=('', '_y'))
 	final_df.drop(list(final_df.filter(regex='_y$')), axis=1, inplace=True)
 
-	# Drop unwanted bag columns 
+	# Drop unwanted bag columns
 	final_df = final_df.drop(['document_mutatie@bag', 'document_nummer@bag', 'status_coordinaat_omschrijving@bag',
         'type_woonobject_code@bag', 'geometrie@bag', '_gebiedsgerichtwerken_id@bag', '_grootstedelijkgebied_id@bag',
        'bron_id@bag', 'buurt_id@bag'], axis=1)
 
 	return final_df
 
-def adres_bag_enrich(adres):
-	bag = load_bag_data()
+
+def adres_bag_enrich(adres, bag):
+	"""Enrich the adres data with information from the BAG data."""
 	bag = prepare_bag(bag)
 	adres = prepare_adres(adres)
 	adres = match_bwv_bag(adres, bag)
 	bag = replace_string_nan_bag(bag)
 	adres = replace_string_nan_adres(adres)
 	adres.name = 'adres'
-
 	return adres
-
-def main():
-	"""Add BAG data to cleaned BWV data."""
-	# Load pre-cleaned adres/zaken/stadia tables.
-	dfs = core.load_dfs('3')
-	adres = dfs['adres']
-	# Load BAG data
-	adres = adres_bag_enrich(adres)
-	core.save_dfs([adres], '15')
-	# Save data to new pickle files.
-
-if __name__ == "__main__":
-    main()
