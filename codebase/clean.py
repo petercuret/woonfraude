@@ -122,8 +122,23 @@ def impute_missing_values(df):
         # Put value in averages column
         averages[col] = mean_datetime
 
-    # Impute missing values by using column averages
+    # Impute missing values by using the column averages.
     df.fillna(value=averages, inplace=True)
+
+
+def impute_missing_values_mode(df, cols):
+    """Impute the mode value (most frequent) in empty values. Usable for fixing bool columns."""
+
+    # Make a dict to save the column modes.
+    modes = {}
+
+    # Loop over all given columns.
+    for col in cols:
+        mode = df[col].mode()[0]  # Compute the column mode.
+        modes[col] = mode  # Add to dictionary.
+
+    # Impute missing values by using the columns modes.
+    df.fillna(value=modes, inplace=True)
 
 
 def select_closed_cases(adres, zaken, stadia):
@@ -193,7 +208,7 @@ def add_binary_label_zaken(zaken, stadia):
     print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
 
 
-def fix_dfs(adres, zaken, stadia, personen):
+def fix_dfs(adres, zaken, stadia, personen, bag):
     """Fix adres, zaken en stadia dataframes."""
 
     # Get path to home directory
@@ -228,3 +243,13 @@ def fix_dfs(adres, zaken, stadia, personen):
 
     # Personen
     personen.drop_duplicates(subset='id', inplace=True)  # Remove duplicate persons.
+
+    # BAG
+    fix_dates(bag, ['begin_geldigheid@bag', 'date_modified@bag'])
+    impute_missing_values(bag)
+    impute_missing_values_mode(bag, ['indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag'])
+    bag.fillna(value={'eigendomsverhouding_id@bag': 'None',
+                      'financieringswijze_id@bag': -1,
+                       'gebruik_id@bag': -1,
+                       'reden_opvoer_id@bag': -1,
+                       'toegang_id@bag': 'None'}, inplace=True)

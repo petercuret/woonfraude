@@ -125,7 +125,7 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         personen = dfs['personen']
         bag = dfs['bag']
         del dfs
-        clean.fix_dfs(adres, zaken, stadia, personen)
+        clean.fix_dfs(adres, zaken, stadia, personen, bag)
         zaken = clean.select_closed_cases(adres, zaken, stadia)
         zaken = clean.filter_categories(zaken)
         zaken.name = 'zaken'
@@ -141,9 +141,9 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         stadia = dfs['stadia']
         personen = dfs['personen']
         bag = dfs['bag']
-        adres = enrich.adres_bag_enrich(adres, bag)
         del dfs
-        save_dfs([adres, zaken, stadia, personen], '3')
+        adres = enrich.adres_bag_enrich(adres, bag)
+        save_dfs([adres, zaken, stadia, personen, bag], '3')
         print("\n#### ...BAG enrichment done! Spent %.2f seconds.\n" % (time.time()-start))
 
     if ADD_LABEL == True:
@@ -154,6 +154,7 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
+        bag = dfs['bag']
         del dfs
         clean.add_binary_label_zaken(zaken, stadia)
         save_dfs([adres, zaken, stadia, personen], '4')
@@ -241,7 +242,18 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         zaken_cat_use = ['beh_code',
                          'eigenaar',
                          'categorie']
-        df = extract_features.process_df_categorical_columns_hot(df, adres_cat_use + zaken_cat_use)
+        bag_cat_use = ['mutatie_gebruiker@bag',
+                       'status_coordinaat_code@bag',
+                       'type_woonobject_omschrijving@bag',
+                       'eigendomsverhouding_id@bag',
+                       'financieringswijze_id@bag',
+                       'gebruik_id@bag',
+                       'ligging_id@bag',
+                       'reden_opvoer_id@bag',
+                       'status_id@bag',
+                       'toegang_id@bag',
+                       ]
+        df = extract_features.process_df_categorical_columns_hot(df, adres_cat_use + zaken_cat_use + bag_cat_use)
 
         # Rescale features.
         df = extract_features.scale_data(df, ['inwnrs', 'kmrs'])
