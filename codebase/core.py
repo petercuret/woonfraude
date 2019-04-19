@@ -242,8 +242,7 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         zaken_cat_use = ['beh_code',
                          'eigenaar',
                          'categorie']
-        bag_cat_use = ['mutatie_gebruiker@bag',
-                       'status_coordinaat_code@bag',
+        bag_cat_use = ['status_coordinaat_code@bag',
                        'type_woonobject_omschrijving@bag',
                        'eigendomsverhouding_id@bag',
                        'financieringswijze_id@bag',

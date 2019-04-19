@@ -131,9 +131,8 @@ def match_bwv_bag(adres, bag):
 def impute_values_for_bagless_addresses(adres):
     """Impute values for adresses where no BAG-match could be found."""
     clean.impute_missing_values(adres)
-    clean.impute_missing_values_mode(adres, ['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag'])
+    clean.impute_missing_values_mode(adres, ['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'])
     adres.fillna(value={'type_woonobject_omschrijving': 'None',
-                      'woningvoorraad@bag': 'None',
                       'eigendomsverhouding_id@bag': 'None',
                       'financieringswijze_id@bag': -1,
                       'gebruik_id@bag': -1,

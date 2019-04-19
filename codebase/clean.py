@@ -247,9 +247,11 @@ def fix_dfs(adres, zaken, stadia, personen, bag):
     # BAG
     fix_dates(bag, ['begin_geldigheid@bag', 'date_modified@bag'])
     impute_missing_values(bag)
-    impute_missing_values_mode(bag, ['indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag'])
-    bag.fillna(value={'eigendomsverhouding_id@bag': 'None',
+    impute_missing_values_mode(bag, ['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'])
+    bag.fillna(value={'type_woonobject_omschrijving': 'None',
+                      'eigendomsverhouding_id@bag': 'None',
                       'financieringswijze_id@bag': -1,
-                       'gebruik_id@bag': -1,
-                       'reden_opvoer_id@bag': -1,
-                       'toegang_id@bag': 'None'}, inplace=True)
+                      'gebruik_id@bag': -1,
+                      'reden_opvoer_id@bag': -1,
+                      'status_id@bag': -1,
+                      'toegang_id@bag': 'None'}, inplace=True)
