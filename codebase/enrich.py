@@ -114,7 +114,7 @@ def match_bwv_bag(adres, bag):
                   '_huisletter@bag',                    # Superfluous (huisletter).
                   '_huisnummer_toevoeging@bag',         # Superfluous (huisnummer toevoeging).
                   'vervallen@bag',                      # Superfluous (all values in col are equal).
-                  'mutatie_gebruiker@bag',               # Superfluous (all values in col are equal).
+                  'mutatie_gebruiker@bag',              # Superfluous (all values in col are equal).
                   'document_mutatie@bag',               # Not available at time of signal.
                   'date_modified@bag',                  # Not available at time of signal.
                   'document_nummer@bag',                # Not needed? (Swaan?)

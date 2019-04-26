@@ -21,11 +21,12 @@ from collections import Counter
 # Import ML Methods
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LassoCV
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import LinearSVC
+from sklearn.model_selection import train_test_split
 
 # Import samplers for handling data imbalance
 from imblearn.over_sampling import ADASYN
@@ -47,19 +48,11 @@ def split_data_train_dev_test(df):
     # Split data into features (X) and labels (y).
     X = df.drop('woonfraude', axis=1)
     y = df.woonfraude
-    print('Original dataset shape %s' % Counter(y))
+    print('Original dataset shape %s' % Counter(df.woonfraude))
 
-    # Compute the amount of datapoints.
-    n = X.shape[0]
-
-    # Create train, dev and test sets using the feature values of the examples.
-    X_shuffled = X.sample(frac=1, random_state=0)
-    X_train, X_dev, X_test = np.split(X_shuffled, [int(n*.7), int(n*.85)])
-
-    # Create train, dev and test sets of the corresponding example labels.
-    y_shuffled = y.sample(frac=1, random_state=0)
-    y_train, y_dev, y_test = np.split(y_shuffled, [int(n*.7), int(n*.85)])
-
+    # Split the dataset.
+    X_train, X_rest, y_train, y_rest = train_test_split(X, y, train_size=0.7, stratify=y)
+    X_dev, X_test, y_dev, y_test = train_test_split(X_rest, y_rest, train_size=0.5, stratify=y_rest)
 
     # Print some information about the train/dev/test set sizes.
     print('Training set shape %s' % Counter(y_train))
@@ -77,21 +70,12 @@ def split_data_train_test(df):
     # Split data into features (X) and labels (y).
     X = df.drop('woonfraude', axis=1)
     y = df.woonfraude
-    print('Original dataset shape %s' % Counter(y))
+    print('Original dataset shape %s' % Counter(df.woonfraude))
 
-    # Compute the amount of datapoints.
-    n = X.shape[0]
+    # Split the dataset.
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.85, stratify=y)
 
-    # Create train and test sets using the feature values of the examples.
-    X_shuffled = X.sample(frac=1, random_state=0)
-    X_train, X_test = np.split(X_shuffled, [int(n*.85)])
-
-    # Create train and test sets of the corresponding example labels.
-    y_shuffled = y.sample(frac=1, random_state=0)
-    y_train, y_test = np.split(y_shuffled, [int(n*.85)])
-
-
-    # Print some information about the train/test set sizes.
+    # Print some information about the train/dev/test set sizes.
     print('Training set shape %s' % Counter(y_train))
     print('Testing set shape %s' % Counter(y_test))
 
@@ -264,6 +248,25 @@ def run_random_forest(X_train, y_train, X_dev, y_dev, n_estimators, max_features
     return clf, precision, recall, f1, f05, conf, report
 
 
+def run_extra_trees(X_train, y_train, X_dev, y_dev, n_estimators, max_features, min_samples_leaf,
+    min_samples_split, bootstrap, criterion):
+    """Run decision tree model. Return results."""
+
+    # Fit model to training data.
+    clf = ExtraTreesClassifier(n_estimators=n_estimators, max_features=max_features,
+        min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap, criterion=criterion)
+    clf.fit(X_train, y_train)
+
+    # Create predictions.
+    y_pred = clf.predict(X_dev)
+
+    # Compute and show performance statistics.
+    precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
+
+    # Show feature importances
+    # print(clf.feature_importances_)
+
+    return clf, precision, recall, f1, f05, conf, report
 
 
 # def import_features():

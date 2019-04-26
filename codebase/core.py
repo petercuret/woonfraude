@@ -206,7 +206,6 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         zaken_cat_remove = [# Remove because cols do not exists when melding is received
                             'einddatum',
                             'mededelingen',
-                            'afg_code_beh',
                             'afs_code',
                             'afs_oms',
                             'afg_code_afs',
@@ -239,7 +238,8 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
                           'wzs_stadsdeelcode_os_2015',
                           'sttnaam',
                           'toev']
-        zaken_cat_use = ['beh_code',
+        zaken_cat_use = ['afg_code_beh',
+                         'beh_code',
                          'eigenaar',
                          'categorie']
         bag_cat_use = ['status_coordinaat_code@bag',

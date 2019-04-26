@@ -173,6 +173,9 @@ def select_closed_cases(adres, zaken, stadia):
     # Combine all selected cases.
     selected_zaken = pd.concat([zl_zaken, rap_zaken], sort=True)
 
+    # Remove temporary mask
+    selected_zaken.drop(columns=['mask'], inplace=True)
+
     # Print results.
     print(f'Selected {len(selected_zaken)} closed cases from a total of {len(zaken)} cases.')
 
@@ -194,15 +197,19 @@ def add_binary_label_zaken(zaken, stadia):
     """Create a binary label defining whether there was woonfraude."""
 
     # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
-    zaken['woonfraude'] = False  # Set default value to false
+    zaken['woonfraude'] = False # Set default value to false
     zaken_mask = zaken.loc[zaken['afs_oms'].str.contains('zl woning is beschikbaar gekomen',
                                                          regex=True, flags=re.IGNORECASE) == True]
     stadia_mask = stadia.loc[stadia['sta_oms'].str.contains('rapport naar han', regex=True,
                                                             flags=re.IGNORECASE) == True]
-    zaken_ids_1 = zaken_mask['zaak_id'].tolist()
-    zaken_ids_2 = stadia_mask['zaak_id'].tolist()
-    zaken_ids = list(set(zaken_ids_1 + zaken_ids_2))  # Get uniques
-    zaken.loc[zaken['zaak_id'].isin(zaken_ids), 'woonfraude'] = True
+    zaken_ids_zaken = zaken_mask['zaak_id'].tolist()
+    zaken_ids_stadia = stadia_mask['zaak_id'].tolist()
+    zaken_ids = list(set(zaken_ids_zaken + zaken_ids_stadia))  # Get uniques
+    zaken.loc[zaken['zaak_id'].isin(zaken_ids), 'woonfraude'] = True  # Add woonfraude label
+
+    # Add woonfraude class labels.
+    # zaken.loc[zaken['zaak_id'].isin(zaken_ids_zaken), 'woonfraude'] = 'zoeklicht'
+    # zaken.loc[zaken['zaak_id'].isin(zaken_ids_stadia), 'woonfraude'] = 'rapport_handhaving'
 
     # Print results
     print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
