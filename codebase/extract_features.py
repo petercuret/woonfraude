@@ -80,13 +80,13 @@ def extract_date_features(df):
     """Expand datetime values into individual features."""
     for col in df.select_dtypes(include=['datetime64[ns]']):
         print(f"Now extracting features from column: '{col}'.")
-        df[col + '_year'] = pd.DatetimeIndex(df[col]).year
+        # df[col + '_year'] = pd.DatetimeIndex(df[col]).year
         df[col + '_month'] = pd.DatetimeIndex(df[col]).month
         df[col + '_day'] = pd.DatetimeIndex(df[col]).day
         df[col + '_weekday'] = pd.DatetimeIndex(df[col]).weekday
         # Get underlying Unix timestamp:
         # https://stackoverflow.com/questions/15203623/convert-pandas-datetimeindex-to-unix-time
-        df[col + '_unix'] = df[col].view('int64')
+        # df[col + '_unix'] = df[col].view('int64')
         df.drop(columns=[col], inplace=True)
         print("Done!")
     return df

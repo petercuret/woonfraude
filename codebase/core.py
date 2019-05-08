@@ -174,6 +174,15 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         adres_cat_remove = [# Remove because cols do not exists when melding is received
                             'wzs_update_datumtijd',
                             # Remove because cols do not add extra information.
+                            'kmrs',
+                            'straatcode',
+                            'xref',
+                            'yref',
+                            'postcode',
+                            'wzs_buurtcode_os_2015',
+                            'wzs_buurtcombinatiecode_os_2015',
+                            'wzs_stadsdeelcode_os_2015',
+                            'sttnaam',
                             'hvv_dag_tek', # Empty column
                             'max_vestig_dtm', # Empty column
                             'wzs_22gebiedencode_os_2015', # Empty column
@@ -210,8 +219,12 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
                             'afg_code_afs',
                             'wzs_update_datumtijd',
                             # Remove because cols do not add extra information.
+                            'kamer_aantal',
+                            'wvs_nr',
                             'beh_oms',
-                            'wzs_id']
+                            'wzs_id',
+                            # Remove cols because they contains an ID
+                            'zaak_id']
         adres.drop(columns=adres_cat_remove, inplace=True)
         zaken.drop(columns=zaken_cat_remove, inplace=True)
 
@@ -228,15 +241,10 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         df = extract_features.extract_date_features(df)
 
         # Extract features from columns based on word occurrence and one-hot encoding.
-        adres_cat_use =  ['postcode',
+        adres_cat_use =  ['toev',
                           'pvh_omschr',
                           'sbw_omschr',
-                          'sbv_omschr',
-                          'wzs_buurtcode_os_2015',
-                          'wzs_buurtcombinatiecode_os_2015',
-                          'wzs_stadsdeelcode_os_2015',
-                          'sttnaam',
-                          'toev']
+                          'sbv_omschr']
         zaken_cat_use = ['afg_code_beh',
                          'beh_code',
                          'eigenaar',
@@ -254,7 +262,7 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         df = extract_features.process_df_categorical_columns_hot(df, adres_cat_use + zaken_cat_use + bag_cat_use)
 
         # Rescale features.
-        df = extract_features.scale_data(df, ['inwnrs', 'kmrs'])
+        df = extract_features.scale_data(df, ['inwnrs'])
 
         # Remove adres_id, since this is not a feature we want our algorihtm to try and learn from.
         df.drop(columns='adres_id', inplace=True)
