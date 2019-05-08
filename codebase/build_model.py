@@ -98,7 +98,7 @@ def undersample(X_train_org, y_train_org, sampler='AllKNN', size=1000):
     return X_train, y_train
 
 
-def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
+def augment_data(X_train_org, y_train_org, sampler='ADASYN_TEST'):
     """Synthesize more positive samples using one of various techniques (ADASYN, SMOTE, etc.)"""
 
     # Set random seed.
@@ -106,19 +106,19 @@ def augment_data(X_train_org, y_train_org, sampler='ADASYN'):
 
     # Pick sampler based on variable setting.
     if sampler == 'ADASYN':
-        samp = ADASYN(random_state=random_seed)
+        samp = ADASYN(random_state=random_seed, n_jobs=8)
     if sampler == 'ADASYN_TEST':
-        samp = ADASYN(sampling_strategy = {True: 40000, False: 20000}, random_state=random_seed, n_jobs=8)
+        samp = ADASYN(sampling_strategy = {True: 50000, False: 50000}, random_state=random_seed, n_jobs=8)
     if sampler == 'SMOTE':
-        samp = SMOTE(random_state=random_seed)
+        samp = SMOTE(random_state=random_seed, n_jobs=8)
     if sampler == 'BorderlineSMOTE':
-        samp = BorderlineSMOTE(random_state=random_seed)
+        samp = BorderlineSMOTE(random_state=random_seed, n_jobs=8)
     if sampler == 'SVMSMOTE':
-        samp = SVMSMOTE(random_state=random_seed)
+        samp = SVMSMOTE(random_state=random_seed, n_jobs=8)
     if sampler == 'SMOTENC':
-        samp = SMOTENC(random_state=random_seed, categorical_features=[2])
+        samp = SMOTENC(random_state=random_seed, categorical_features=[2], n_jobs=8)
     if sampler == 'RandomOverSampler':
-        samp = RandomOverSampler(random_state=random_seed)
+        samp = RandomOverSampler(random_state=random_seed, n_jobs=8)
 
     # The resulting X_train and y_train are numpy arrays.
     X_train, y_train = samp.fit_resample(X_train_org, y_train_org)
@@ -233,7 +233,8 @@ def run_random_forest(X_train, y_train, X_dev, y_dev, n_estimators, max_features
 
     # Fit model to training data.
     clf = RandomForestClassifier(n_estimators=n_estimators, max_features=max_features,
-        min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap, criterion=criterion)
+        min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap,
+        criterion=criterion, n_jobs=-1)
     clf.fit(X_train, y_train)
 
     # Create predictions.
@@ -254,7 +255,8 @@ def run_extra_trees(X_train, y_train, X_dev, y_dev, n_estimators, max_features, 
 
     # Fit model to training data.
     clf = ExtraTreesClassifier(n_estimators=n_estimators, max_features=max_features,
-        min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap, criterion=criterion)
+        min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap,
+        criterion=criterion, n_jobs=-1)
     clf.fit(X_train, y_train)
 
     # Create predictions.

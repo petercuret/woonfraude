@@ -143,7 +143,7 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         bag = dfs['bag']
         del dfs
         adres = enrich.adres_bag_enrich(adres, bag)
-        save_dfs([adres, zaken, stadia, personen, bag], '3')
+        save_dfs([adres, zaken, stadia, personen], '3')
         print("\n#### ...BAG enrichment done! Spent %.2f seconds.\n" % (time.time()-start))
 
     if ADD_LABEL == True:
@@ -154,7 +154,6 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         zaken = dfs['zaken']
         stadia = dfs['stadia']
         personen = dfs['personen']
-        bag = dfs['bag']
         del dfs
         clean.add_binary_label_zaken(zaken, stadia)
         save_dfs([adres, zaken, stadia, personen], '4')
