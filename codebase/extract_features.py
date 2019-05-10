@@ -129,6 +129,10 @@ def add_person_features(df, personen):
     # Create a new column in the dataframe showing the amount of people at each address.
     # TODO: this step currently takes a few minutes to complete, should still be optimized.
     df['aantal_personen'] = 0
+    df['aantal_vertrokken_personen'] = -1
+    df['aantal_overleden_personen'] = -1
+    df['aantal_niet_uitgeschrevenen'] = -1
+    df['leegstand'] = True
     df['leeftijd_jongste_persoon'] = -1.
     df['leeftijd_oudste_persoon'] = -1.
     df['aantal_kinderen'] = 0
@@ -149,33 +153,44 @@ def add_person_features(df, personen):
         row = df.iloc[i]
         adres_id = row['adres_id']
         try:
-            # Get the inhabitants for the current address
+            # Get the inhabitants for the current address.
             inhab_locs = inhabitant_locs[adres_id].keys()
             inhab = personen.loc[inhab_locs]
 
-            # Totaal aantal personen (int)
+            # Check whether any registered inhabitants have left Amsterdam or have passed away.
+            aantal_vertrokken_personen = sum(inhab["vertrekdatum_adam"].notnull())
+            aantal_overleden_personen = sum(inhab["overlijdensdatum"].notnull())
+            aantal_niet_uitgeschrevenen = len(inhab[inhab["vertrekdatum_adam"].notnull() | inhab["overlijdensdatum"].notnull()])
+            df['aantal_vertrokken_personen'] = aantal_vertrokken_personen
+            df['aantal_overleden_personen'] = aantal_overleden_personen
+            df['aantal_niet_uitgeschrevenen'] = aantal_niet_uitgeschrevenen
+            # If there are more inhabitants than people that are incorrectly still registered, then there is no 'leegstand'.
+            if len(inhab) > aantal_niet_uitgeschrevenen:
+                df['leegstand'] = False
+
+            # Totaal aantal personen (int).
             aantal_personen = len(inhab)
             df.at[i, 'aantal_personen'] = aantal_personen
 
-            # Leeftijd jongste persoon (float)
+            # Leeftijd jongste persoon (float).
             leeftijd_jongste_persoon = min(inhab['leeftijd'])
             df.at[i, 'leeftijd_jongste_persoon'] = leeftijd_jongste_persoon
 
-            # Leeftijd oudste persoon (float)
+            # Leeftijd oudste persoon (float).
             leeftijd_oudste_persoon = max(inhab['leeftijd'])
             df.at[i, 'leeftijd_oudste_persoon'] = leeftijd_oudste_persoon
 
-            # Aantal kinderen ingeschreven op adres (int/float)
+            # Aantal kinderen ingeschreven op adres (int/float).
             aantal_kinderen = sum(inhab['leeftijd'] < 18)
             df.at[i, 'aantal_kinderen'] = aantal_kinderen
             df.at[i, 'percentage_kinderen'] = aantal_kinderen / aantal_personen
 
-            # Aantal mannen (int/float)
+            # Aantal mannen (int/float).
             aantal_mannen = sum(inhab.geslacht == 'M')
             df.at[i, 'aantal_mannen'] = aantal_mannen
             df.at[i, 'percentage_mannen'] = aantal_mannen / aantal_personen
 
-            # Gemiddelde leeftijd (float)
+            # Gemiddelde leeftijd (float).
             gemiddelde_leeftijd = inhab.leeftijd.mean()
             df.at[i, 'gemiddelde_leeftijd'] = gemiddelde_leeftijd
 
@@ -183,20 +198,21 @@ def add_person_features(df, personen):
             stdev_leeftijd = inhab.leeftijd.std()
             df.at[i, 'stdev_leeftijd'] = stdev_leeftijd if aantal_personen > 1 else 0
 
-            # Aantal verschillende achternamen (int/float)
+            # Aantal verschillende achternamen (int/float).
             aantal_achternamen = inhab.naam.nunique()
             df.at[i, 'aantal_achternamen'] = aantal_achternamen
             df.at[i, 'percentage_achternamen'] = aantal_achternamen / aantal_personen
 
-            # Gezinsverhouding (frequency count per klasse) (int/float)
+            # Gezinsverhouding (frequency count per klasse) (int/float).
             gezinsverhouding = inhab.gezinsverhouding.value_counts()
             for key in gezinsverhouding.keys():
                 val = gezinsverhouding[key]
                 df.at[i, f'gezinsverhouding_{key}'] = val
                 df.at[i, f'percentage_gezinsverhouding_{key}'] = val / aantal_personen
 
-        except KeyError:
+        except (KeyError, ValueError) as e:
             pass
+
     print("...done!")
 
     return df
