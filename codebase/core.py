@@ -61,6 +61,37 @@ def download_data(table, limit=9223372036854775807):
     return df
 
 
+def download_bag():
+    """Download BAG data from multiple linked tables on the wonen server."""
+
+    # Create query
+    sql = """
+    SELECT *
+    FROM public.bag_nummeraanduiding
+    JOIN bag_ligplaats ON bag_nummeraanduiding.bag_nummeraanduiding_ligplaats_id_ccf19788_fk_bag_ligplaats_id = bag_ligplaats.bag_nummeraanduiding_ligplaats_id_ccf19788_fk_bag_ligplaats_id
+    JOIN bag_standplaats ON bag_nummeraanduiding.bag_nummeraanduiding_standplaats_id_e4275a89_fk_bag_stand = bag_standplaats.bag_nummeraanduiding_standplaats_id_e4275a89_fk_bag_stand
+    JOIN bag_verblijfsobject ON bag_nummeraanduiding.bag_nummeraanduiding_verblijfsobject_id_ffa54442_fk_bag_verbl = bag_verblijfsobject.bag_nummeraanduiding_verblijfsobject_id_ffa54442_fk_bag_verbl;
+    """
+
+    # Create a server connection.
+    conn = psycopg2.connect(host = config.BAG_HOST,
+                            dbname = config.BAG_DB,
+                            user = config.BAG_USER,
+                            password = config.BAG_PASSWORD)
+
+    # Get data & convert to dataframe.
+    df = sqlio.read_sql_query(sql, conn)
+
+    # Close connection to server.
+    conn.close()
+
+    # Name dataframe according to table name. Won't be saved after pickling.
+    df.name = 'bag'
+
+    # Return dataframe.
+    return df
+
+
 def save_dfs(dfs, version):
     """Save a version of the given dataframes to dir. Use the df names as their keys."""
     home = str(Path.home())
@@ -100,7 +131,7 @@ def main(DOWNLOAD=False, FIX=False, ENRICH=False, ADD_LABEL=False, EXTRACT_FEATU
         zaken = download_data('import_wvs')
         stadia = download_data('import_stadia')
         personen = download_data("bwv_personen")
-        bag = download_data('bag_verblijfsobject')
+        bag = download_bag()
         bag = bag.add_suffix('@bag')
         # hotline_melding = download_data("bwv_hotline_melding", limit=100)
         # personen_huwelijk = download_data("bwv_personen_huwelijk", limit=100)
