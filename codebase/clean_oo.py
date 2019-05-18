@@ -40,6 +40,7 @@ import core
 ###################
 
 class CleanTransformer(BaseEstimator, TransformerMixin):
+    """Class for performing cleaning steps on dataframes within the sklearn pipeline."""
 
     def __init__(self,
                  id_column = None,
@@ -51,7 +52,7 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
                  impute_missing_values: bool = True,  # Impute missing values in all numeric and timestamp columns using averages.
                  impute_missing_values_mode: list = [],  # Impute missing values for a list of specific columns using the mode.
                  fillna_columns: dict = {},  # Contains the following key-value pairs: key=column_name, value=value_to_be_imputed.
-                 ):
+                ):
         self.id_column = id_column
         self.drop_duplicates = drop_duplicates
         self.fix_date_columns = fix_date_columns
