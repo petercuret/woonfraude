@@ -65,13 +65,13 @@ def download_bag():
     """Download BAG data from multiple linked tables on the wonen server."""
 
     # Create query
-    sql = """
-    SELECT *
-    FROM public.bag_nummeraanduiding
-    JOIN bag_ligplaats ON bag_nummeraanduiding.bag_nummeraanduiding_ligplaats_id_ccf19788_fk_bag_ligplaats_id = bag_ligplaats.bag_nummeraanduiding_ligplaats_id_ccf19788_fk_bag_ligplaats_id
-    JOIN bag_standplaats ON bag_nummeraanduiding.bag_nummeraanduiding_standplaats_id_e4275a89_fk_bag_stand = bag_standplaats.bag_nummeraanduiding_standplaats_id_e4275a89_fk_bag_stand
-    JOIN bag_verblijfsobject ON bag_nummeraanduiding.bag_nummeraanduiding_verblijfsobject_id_ffa54442_fk_bag_verbl = bag_verblijfsobject.bag_nummeraanduiding_verblijfsobject_id_ffa54442_fk_bag_verbl;
-    """
+sql = """
+SELECT *
+FROM public.bag_nummeraanduiding
+FULL JOIN bag_ligplaats ON bag_nummeraanduiding.ligplaats_id = bag_ligplaats.id
+FULL JOIN bag_standplaats ON bag_nummeraanduiding.standplaats_id = bag_standplaats.id
+FULL JOIN bag_verblijfsobject ON bag_nummeraanduiding.verblijfsobject_id = bag_verblijfsobject.id;
+"""
 
     # Create a server connection.
     conn = psycopg2.connect(host = config.BAG_HOST,
