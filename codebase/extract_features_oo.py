@@ -13,20 +13,9 @@ Written by Swaan Dekkers & Thomas Jongstra
 # Imports
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 import math
-
-
-###################
-# AANDACHTSPUNTEN #
-###################
-#
-# Waar kunnen de functies "extract_leegstand", "add_person_features" en "scale_data" het beste landen?
-#
-###################
-###################
 
 
 class FeatureExtractionTransformer(BaseEstimator, TransformerMixin):
@@ -47,27 +36,21 @@ class FeatureExtractionTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        if self.text_features_cols_hot:
+        if self.text_features_cols_hot != []:
             X = extract_hot_text_features_cols(X, self.text_features_cols_hot)
-        if self.categorical_cols_hot:
+        if self.categorical_cols_hot != []:
             X = extract_hot_categorical_cols(X, self.categorical_cols_hot)
-        if self.categorical_cols_no_hot:
+        if self.categorical_cols_no_hot != []:
             X = extract_no_hot_categorical_cols(X, self.categorical_cols_no_hot)
         if self.extract_date_features:
             X = extract_date_features(X)
+        if self.scale_data != []:
+            X = scale_data(X, cols)
 
 
 ##################################
 ##### Features based on text #####
 ##################################
-
-# def text_series_to_features(series):
-#     """Convert a series of text items (possibly containing multiple words) to a list of words and an occurrence matrix."""
-#     vectorizer = CountVectorizer()
-#     X = vectorizer.fit_transform(series)
-#     features = vectorizer.get_feature_names()
-#     matrix = X.toarray()
-#     return features, matrix
 
 def extract_text_features_col(df, col):
     """Extract text features from a single column in a df. Return an occurrence dataframe encoding based on these features."""
@@ -131,22 +114,4 @@ def extract_date_features(df):
         # df[col + '_unix'] = df[col].view('int64')
         df.drop(columns=[col], inplace=True)
         print("Done!")
-    return df
-
-
-def extract_leegstand(df):
-    """Create a column indicating leegstand (no inhabitants on the address)."""
-    df['leegstand'] = (df.inwnrs == 1)
-    return df
-
-
-###########################
-##### Feature Scaling #####
-###########################
-
-def scale_data(df, cols):
-    """Scale data using the sklearn StandardScaler for the defined columns."""
-
-    scaler = StandardScaler()
-    df[cols] = scaler.fit_transform(df[cols])
     return df
