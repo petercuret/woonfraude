@@ -45,6 +45,7 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
     def __init__(self,
                  id_column = None,
                  drop_duplicates: bool = True,
+                 drop_columns: list = [],  # Contains list of columns to drop.
                  fix_date_columns: list = [],  # Contains list of date columns to fix.
                  clean_dates: bool = False,
                  lower_string_columns = True,  # Contains list of columns to lower strings in. If True, all string columns are lowered.

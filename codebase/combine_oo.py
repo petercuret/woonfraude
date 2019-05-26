@@ -21,6 +21,9 @@ import psycopg2
 import numpy as np
 
 
+# NIET VERGETEN!!
+# adres_id moet verwijderd worden voordat learning plaatsvindt!
+
 class AdresCombineTransformer(BaseEstimator, TransformerMixin):
     """Class for combining/integrating multiple dataframes into a single dataframe."""
 

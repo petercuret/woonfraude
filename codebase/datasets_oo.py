@@ -19,8 +19,9 @@ import config
 class MyDataset(pd.Dataframe):
     """Dataset containing address data."""
 
-    # Define a class attribute (name), which has to get a value in all subclasses.
+    # Define class attributed (name, id_column), which have to get a value in all subclasses.
     name = None
+    id_column = None
 
     def __init__(self):
         self.data = None
@@ -72,8 +73,9 @@ class MyDataset(pd.Dataframe):
 class AdresDataset(MyDataset):
     """Create a dataset for the adres data."""
 
-    # Set 'adres' as the 'name' class attribute.
+    # Set the class attributes.
     name = 'adres'
+    id_column = 'adres_id'
 
     @classmethod
     def extract_leegstand():
@@ -81,26 +83,28 @@ class AdresDataset(MyDataset):
         self.data['leegstand'] = (self.data.inwnrs == 0)
 
 
-
 class ZakenDataset(MyDataset):
     """Create a dataset for the zaken data."""
 
-    # Set 'zaken' as the 'name' class attribute.
+    ## Set the class attributes.
     name = 'zaken'
+    id_column = 'zaak_id'
 
 
 class StadiaDataset(MyDataset):
     """Create a dataset for the stadia data."""
 
-    # Set 'stadia' as the 'name' class attribute.
+    # Set the class attributes.
     name = 'stadia'
+    id_column = 'stadium_id'
 
 
 class BagDataset(MyDataset):
     """Create a dataset for the bag data."""
 
-    # Set 'bag' as the 'name' class attribute.
+    # Set the class attributes.
     name = 'bag'
+    id_column = 'id'
 
 
 def download_dataset(table, limit=9223372036854775807):
