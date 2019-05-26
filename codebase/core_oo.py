@@ -9,6 +9,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 
 # Import statements
+from sklearn.pipeline import Pipeline
 from pathlib import Path
 import pandas.io.sql as sqlio
 import pandas as pd
@@ -24,8 +25,10 @@ import extract_features_oo
 import combine_oo
 
 
-adres = AdresDataset.download()
-zaken = ZakenDataset.download()
-stadia = StadiaDataset.download()
-personen = PersonenDataset.download()
-bag = BagDataset.download()
+# Download (or load cached versions of) the datasets.
+adres = AdresDataset.load('download')
+zaken = ZakenDataset.load('download')
+stadia = StadiaDataset.load('download')
+personen = PersonenDataset.load('download')
+bag = BagDataset.load('download')
+

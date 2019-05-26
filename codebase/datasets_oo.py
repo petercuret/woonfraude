@@ -35,8 +35,14 @@ class MyDataset(pd.Dataframe):
     @classmethod
     def load(version):
         """Load a previously processed version of the dataset."""
-        self.data = load_dataset(self.name, version)
-        self.version = version
+        try:
+            self.data = load_dataset(self.name, version)
+            self.version = version
+        except Exception:
+            if version == 'download':
+                _force_download()
+            else:
+                print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
 
 
     @classmethod
@@ -50,15 +56,16 @@ class MyDataset(pd.Dataframe):
                 print("Loaded cached dataset from local storage. To force a download, \
                        use the 'download' method with the flag 'force' set to 'True'")
             except Exception:
-                self.forced_download()
+                self._force_download()
 
 
-    @classmethos
-    def forced_download():
+    @classmethod
+    def _force_download():
         """Download a new copy of the dataset from its source."""
         start = time.time()
         print("Starting data download...")
         self.data = download_dataset(self.name, limit)
+        self.version = 'download'
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
