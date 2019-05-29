@@ -39,7 +39,7 @@ class MyDataset(pd.DataFrame):
         try:
             self.data = load_dataset(self.name, version)
             self.version = version
-        except OSError as e::
+        except OSError as e:
             print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
             if version == 'download':
                 print("The software will now download the dataset instead.")
