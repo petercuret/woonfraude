@@ -39,7 +39,7 @@ class MyDataset(pd.DataFrame):
         try:
             self.data = load_dataset(self.name, version)
             self.version = version
-        except OSError as e:
+        except FileNotFoundError as e:
             print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
             if version == 'download':
                 print("The software will now download the dataset instead.")
@@ -63,7 +63,7 @@ class MyDataset(pd.DataFrame):
 
 
     @classmethod
-    def _force_download(self):
+    def _force_download(self, limit: int = 9223372036854775807):
         """Download a new copy of the dataset from its source."""
         start = time.time()
         print("Starting data download...")
