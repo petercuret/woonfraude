@@ -49,7 +49,7 @@ class MyDataset(pd.Dataframe):
     @classmethod
     def download(force=False, limit: int = 9223372036854775807):
         """Download a copy of the dataset, or restore a previous version if available."""
-        if force = True:
+        if force == True:
             self.forced_download()
         else:
             try:
