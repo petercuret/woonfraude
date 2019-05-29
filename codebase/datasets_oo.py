@@ -16,7 +16,7 @@ import time
 import config
 
 
-class MyDataset(pd.Dataframe):
+class MyDataset(pd.DataFrame):
     """Dataset containing address data."""
 
     # Define class attributed (name, id_column), which have to get a value in all subclasses.
