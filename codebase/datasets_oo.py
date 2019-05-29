@@ -8,8 +8,8 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 # Import statements
 from pathlib import Path
+import pandas.io.sql as sqlio
 import pandas as pd
-import sqlio
 import time
 # from torch.utils.data import Dataset
 
