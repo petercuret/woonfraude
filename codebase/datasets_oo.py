@@ -9,6 +9,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 # Import statements
 from pathlib import Path
 import pandas as pd
+import sqlio
 import time
 # from torch.utils.data import Dataset
 
@@ -160,5 +161,8 @@ def save_dataset(data, dataset_name, version):
 
 def load_dataset(dataset_name, version):
     """Load a version of the dataframe from file. Rename it (pickling removes name)."""
-    data = pd.read_hdf(path_or_buf=f"{DATA_PATH}{dataset_name}_{version}.h5", key=dataset_name, mode='r')
-    return data
+    try:
+        data = pd.read_hdf(path_or_buf=f"{DATA_PATH}{dataset_name}_{version}.h5", key=dataset_name, mode='r')
+        return data
+    except FileNotFoundError:
+        raise FileNotFoundError
