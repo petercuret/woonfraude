@@ -148,7 +148,7 @@ def download_dataset(table, limit=9223372036854775807):
 
 # Define HOME and DATA_PATH on a global level
 HOME = str(Path.home())
-DATA_PATH = f'{home}/Documents/woonfraude/data/'
+DATA_PATH = f'{HOME}/Documents/woonfraude/data/'
 
 
 def save_dataset(data, dataset_name, version):
