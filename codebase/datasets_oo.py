@@ -39,18 +39,20 @@ class MyDataset(pd.DataFrame):
         try:
             self.data = load_dataset(self.name, version)
             self.version = version
-        except Exception:
+        except OSError as e::
+            print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
             if version == 'download':
-                _force_download()
+                print("The software will now download the dataset instead.")
+                self._force_download()
             else:
-                print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
+                print("Please try loading another version, or creating the version you need.")
 
 
     @classmethod
     def download(self, force=False, limit: int = 9223372036854775807):
         """Download a copy of the dataset, or restore a previous version if available."""
         if force == True:
-            self.forced_download()
+            self._force_download()
         else:
             try:
                 self.data = load(version='download')
