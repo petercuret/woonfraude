@@ -125,16 +125,16 @@ def download_dataset(table, limit=9223372036854775807):
                         password = config.BAG_PASSWORD)
 
     # Create query to download the specific table data from the server.
-    if table in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']:
-        sql = f"select * from public.{table} limit {limit};"
+    # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
+    sql = f"select * from public.{table} limit {limit};"
     if table in ['bag']:
-            sql = """
-            SELECT *
-            FROM public.bag_nummeraanduiding
-            FULL JOIN bag_ligplaats ON bag_nummeraanduiding.ligplaats_id = bag_ligplaats.id
-            FULL JOIN bag_standplaats ON bag_nummeraanduiding.standplaats_id = bag_standplaats.id
-            FULL JOIN bag_verblijfsobject ON bag_nummeraanduiding.verblijfsobject_id = bag_verblijfsobject.id;
-            """
+        sql = """
+        SELECT *
+        FROM public.bag_nummeraanduiding
+        FULL JOIN bag_ligplaats ON bag_nummeraanduiding.ligplaats_id = bag_ligplaats.id
+        FULL JOIN bag_standplaats ON bag_nummeraanduiding.standplaats_id = bag_standplaats.id
+        FULL JOIN bag_verblijfsobject ON bag_nummeraanduiding.verblijfsobject_id = bag_verblijfsobject.id;
+        """
 
     # Get data & convert to dataframe.
     df = sqlio.read_sql_query(sql, conn)
