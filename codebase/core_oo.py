@@ -78,7 +78,7 @@ adres_remove = [# Remove because cols do not exists when melding is received
                     'a_dam_bag',
                     'landelijk_bag']
 
-adres = AdresDataset.load('download')
+# adres = AdresDataset.load('download')
 # adresPipeline = Pipeline(steps=[
 #     ('clean', CleanTransformer(
 #         id_column=adres.id_column,

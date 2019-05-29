@@ -18,7 +18,7 @@ import time
 import config
 
 
-class MyDataset(pd.DataFrame):
+class MyDataset():
     """Dataset containing address data."""
 
     # Define class attributed (name, id_column), which have to get a value in all subclasses.
@@ -30,6 +30,7 @@ class MyDataset(pd.DataFrame):
         self.data = None
         self.version = None
 
+
     @classmethod
     def save(self, version):
         """Save a previously processed version of the dataset."""
@@ -40,7 +41,7 @@ class MyDataset(pd.DataFrame):
     def load(self, version):
         """Load a previously processed version of the dataset."""
         try:
-            self.data = load_dataset(self.table_name, version)
+            self.data = load_dataset(self.name, version)
             self.version = version
         except FileNotFoundError as e:
             print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
