@@ -28,13 +28,13 @@ class MyDataset(pd.DataFrame):
         self.version = None
 
     @classmethod
-    def save(version):
+    def save(self, version):
         """Save a previously processed version of the dataset."""
         save_dataset(self.data, self.name, self.version)
 
 
     @classmethod
-    def load(version):
+    def load(self, version):
         """Load a previously processed version of the dataset."""
         try:
             self.data = load_dataset(self.name, version)
@@ -47,7 +47,7 @@ class MyDataset(pd.DataFrame):
 
 
     @classmethod
-    def download(force=False, limit: int = 9223372036854775807):
+    def download(self, force=False, limit: int = 9223372036854775807):
         """Download a copy of the dataset, or restore a previous version if available."""
         if force == True:
             self.forced_download()
@@ -61,7 +61,7 @@ class MyDataset(pd.DataFrame):
 
 
     @classmethod
-    def _force_download():
+    def _force_download(self):
         """Download a new copy of the dataset from its source."""
         start = time.time()
         print("Starting data download...")
@@ -78,7 +78,7 @@ class AdresDataset(MyDataset):
     id_column = 'adres_id'
 
     @classmethod
-    def extract_leegstand():
+    def extract_leegstand(self):
         """Create a column indicating leegstand (no inhabitants on the address)."""
         self.data['leegstand'] = (self.data.inwnrs == 0)
 
