@@ -23,6 +23,7 @@ class MyDataset(pd.DataFrame):
 
     # Define class attributed (name, id_column), which have to get a value in all subclasses.
     name = None
+    table_name = None
     id_column = None
 
     def __init__(self):
@@ -65,11 +66,46 @@ class MyDataset(pd.DataFrame):
 
 
     @classmethod
-    def _force_download(self, limit: int = 9223372036854775807):
+    def _force_download(self, limit=9223372036854775807):
         """Download a new copy of the dataset from its source."""
+
         start = time.time()
         print("Starting data download...")
-        self.data = download_dataset(self.name, limit)
+
+        # Create a server connection.
+        # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
+        conn = psycopg2.connect(host = config.HOST,
+                                dbname = config.DB,
+                                user = config.USER,
+                                password = config.PASSWORD)
+        if self.table_name in ['bag_verblijfsobject', 'bag']:
+            conn = psycopg2.connect(host = config.BAG_HOST,
+                            dbname = config.BAG_DB,
+                            user = config.BAG_USER,
+                            password = config.BAG_PASSWORD)
+
+        # Create query to download the specific table data from the server.
+        # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
+        sql = f"select * from public.{self.table_name} limit {limit};"
+        if self.table_name in ['bag_nummeraanduiding']:
+            sql = """
+            SELECT *
+            FROM public.bag_nummeraanduiding
+            FULL JOIN bag_ligplaats ON bag_nummeraanduiding.ligplaats_id = bag_ligplaats.id
+            FULL JOIN bag_standplaats ON bag_nummeraanduiding.standplaats_id = bag_standplaats.id
+            FULL JOIN bag_verblijfsobject ON bag_nummeraanduiding.verblijfsobject_id = bag_verblijfsobject.id;
+            """
+
+        # Get data & convert to dataframe.
+        self.data = sqlio.read_sql_query(sql, conn)
+
+        # Close connection to server.
+        conn.close()
+
+        # Name dataframe according to table name. Beware: name will be removed by pickling.
+        self.data.name = self.name
+
+        # Wrap up
         self.version = 'download'
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
@@ -79,6 +115,7 @@ class AdresDataset(MyDataset):
 
     # Set the class attributes.
     name = 'adres'
+    table_name = 'import_adres'
     id_column = 'adres_id'
 
     @classmethod
@@ -92,6 +129,7 @@ class ZakenDataset(MyDataset):
 
     ## Set the class attributes.
     name = 'zaken'
+    table_name = 'import_wvs'
     id_column = 'zaak_id'
 
 
@@ -100,7 +138,17 @@ class StadiaDataset(MyDataset):
 
     # Set the class attributes.
     name = 'stadia'
+    table_name = 'import_stadia'
     id_column = 'stadium_id'
+
+
+class PersonenDataset(MyDataset):
+    """Create a dataset for the stadia data."""
+
+    # Set the class attributes.
+    name = 'personen'
+    table_name = 'bwv_personen'
+    id_column = 'id'
 
 
 class BagDataset(MyDataset):
@@ -108,46 +156,8 @@ class BagDataset(MyDataset):
 
     # Set the class attributes.
     name = 'bag'
+    table_name = 'bag_nummeraanduiding'
     id_column = 'id'
-
-
-def download_dataset(table, limit=9223372036854775807):
-
-    # Create a server connection.
-    # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
-    conn = psycopg2.connect(host = config.HOST,
-                            dbname = config.DB,
-                            user = config.USER,
-                            password = config.PASSWORD)
-    if table in ['bag_verblijfsobject', 'bag']:
-        conn = psycopg2.connect(host = config.BAG_HOST,
-                        dbname = config.BAG_DB,
-                        user = config.BAG_USER,
-                        password = config.BAG_PASSWORD)
-
-    # Create query to download the specific table data from the server.
-    # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
-    sql = f"select * from public.{table} limit {limit};"
-    if table in ['bag']:
-        sql = """
-        SELECT *
-        FROM public.bag_nummeraanduiding
-        FULL JOIN bag_ligplaats ON bag_nummeraanduiding.ligplaats_id = bag_ligplaats.id
-        FULL JOIN bag_standplaats ON bag_nummeraanduiding.standplaats_id = bag_standplaats.id
-        FULL JOIN bag_verblijfsobject ON bag_nummeraanduiding.verblijfsobject_id = bag_verblijfsobject.id;
-        """
-
-    # Get data & convert to dataframe.
-    df = sqlio.read_sql_query(sql, conn)
-
-    # Close connection to server.
-    conn.close()
-
-    # Name dataframe according to table name. Won't be saved after pickling.
-    df.name = table
-
-    # Return dataframe.
-    return df
 
 
 # Define HOME and DATA_PATH on a global level
