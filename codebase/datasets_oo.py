@@ -113,11 +113,11 @@ class BagDataset(MyDataset):
 def download_dataset(table, limit=9223372036854775807):
 
     # Create a server connection.
-    if table in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen']:
-        conn = psycopg2.connect(host = config.HOST,
-                                dbname = config.DB,
-                                user = config.USER,
-                                password = config.PASSWORD)
+    # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
+    conn = psycopg2.connect(host = config.HOST,
+                            dbname = config.DB,
+                            user = config.USER,
+                            password = config.PASSWORD)
     if table in ['bag_verblijfsobject', 'bag']:
         conn = psycopg2.connect(host = config.BAG_HOST,
                         dbname = config.BAG_DB,
