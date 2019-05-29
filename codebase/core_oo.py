@@ -31,10 +31,10 @@ import combine_oo
 
 
 # Download (or load cached versions of) the datasets.
-zaken = ZakenDataset.load('download')
-stadia = StadiaDataset.load('download')
-personen = PersonenDataset.load('download')
-bag = BagDataset.load('download')
+# zaken = ZakenDataset.load('download')
+# stadia = StadiaDataset.load('download')
+# personen = PersonenDataset.load('download')
+# bag = BagDataset.load('download')
 
 
 adres_remove = [# Remove because cols do not exists when melding is received
@@ -79,21 +79,19 @@ adres_remove = [# Remove because cols do not exists when melding is received
                     'landelijk_bag']
 
 adres = AdresDataset.load('download')
-adres.extract_leegstand()
-adresPipeline = Pipeline(steps=[
-    ('clean', CleanTransformer(
-        id_column=adres.id_column,
-        drop_duplicates=True,
-        drop_columns=adres_remove,
-        fix_date_columns=['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'],
-        lower_string_columns=True,
-        impute_missing_values=True,
-        fillna_columns=True)
-    ),
-    ('extract', FeatureExtractionTransformer(
-        text_features_cols_hot=[],
-        categorical_cols_hot=['toev', 'pvh_omschr', 'sbw_omschr', 'sbv_omschr'],
-        categorical_cols_no_hot=[],
-        ))
-    ])
-
+# adresPipeline = Pipeline(steps=[
+#     ('clean', CleanTransformer(
+#         id_column=adres.id_column,
+#         drop_duplicates=True,
+#         drop_columns=adres_remove,
+#         fix_date_columns=['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'],
+#         lower_string_columns=True,
+#         impute_missing_values=True,
+#         fillna_columns=True)
+#     ),
+#     ('extract', FeatureExtractionTransformer(
+#         text_features_cols_hot=[],
+#         categorical_cols_hot=['toev', 'pvh_omschr', 'sbw_omschr', 'sbv_omschr'],
+#         categorical_cols_no_hot=[],
+#         ))
+#     ])

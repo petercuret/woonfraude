@@ -40,7 +40,7 @@ class MyDataset(pd.DataFrame):
     def load(self, version):
         """Load a previously processed version of the dataset."""
         try:
-            self.data = load_dataset(self.name, version)
+            self.data = load_dataset(self.table_name, version)
             self.version = version
         except FileNotFoundError as e:
             print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
@@ -78,7 +78,7 @@ class MyDataset(pd.DataFrame):
                                 dbname = config.DB,
                                 user = config.USER,
                                 password = config.PASSWORD)
-        if self.table_name in ['bag_verblijfsobject', 'bag']:
+        if self.table_name in ['bag_nummeraanduiding', 'bag_verblijfsobject']:
             conn = psycopg2.connect(host = config.BAG_HOST,
                             dbname = config.BAG_DB,
                             user = config.BAG_USER,
@@ -105,8 +105,9 @@ class MyDataset(pd.DataFrame):
         # Name dataframe according to table name. Beware: name will be removed by pickling.
         self.data.name = self.name
 
-        # Wrap up
+        # Wrap up (rename version, cache dataset locally, and show spent time.)
         self.version = 'download'
+        save_dataset(self.data, self.name, self.version)
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
@@ -172,8 +173,5 @@ def save_dataset(data, dataset_name, version):
 
 def load_dataset(dataset_name, version):
     """Load a version of the dataframe from file. Rename it (pickling removes name)."""
-    try:
-        data = pd.read_hdf(path_or_buf=f"{DATA_PATH}{dataset_name}_{version}.h5", key=dataset_name, mode='r')
-        return data
-    except FileNotFoundError:
-        raise FileNotFoundError
+    data = pd.read_hdf(path_or_buf=f"{DATA_PATH}{dataset_name}_{version}.h5", key=dataset_name, mode='r')
+    return data
