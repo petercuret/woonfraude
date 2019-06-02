@@ -68,6 +68,13 @@ class MyDataset():
 
     @classmethod
     def _force_download(self, limit=9223372036854775807):
+        """Force a dataset download."""
+        self.data = download_dataset(self.name, self.table_name, limit)
+        self.version = 'download'
+        save_dataset(self.data, self.name, self.version)  # cache dataset locally
+
+
+def download_dataset(dataset_name, table_name, limit=9223372036854775807):
         """Download a new copy of the dataset from its source."""
 
         start = time.time()
@@ -79,7 +86,7 @@ class MyDataset():
                                 dbname = config.DB,
                                 user = config.USER,
                                 password = config.PASSWORD)
-        if self.table_name in ['bag_nummeraanduiding', 'bag_verblijfsobject']:
+        if table_name in ['bag_nummeraanduiding', 'bag_verblijfsobject']:
             conn = psycopg2.connect(host = config.BAG_HOST,
                             dbname = config.BAG_DB,
                             user = config.BAG_USER,
@@ -87,8 +94,8 @@ class MyDataset():
 
         # Create query to download the specific table data from the server.
         # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
-        sql = f"select * from public.{self.table_name} limit {limit};"
-        if self.table_name in ['bag_nummeraanduiding']:
+        sql = f"select * from public.{table_name} limit {limit};"
+        if table_name in ['bag_nummeraanduiding']:
             sql = """
             SELECT *
             FROM public.bag_nummeraanduiding
@@ -98,17 +105,15 @@ class MyDataset():
             """
 
         # Get data & convert to dataframe.
-        self.data = sqlio.read_sql_query(sql, conn)
+        df = sqlio.read_sql_query(sql, conn)
 
         # Close connection to server.
         conn.close()
 
         # Name dataframe according to table name. Beware: name will be removed by pickling.
-        self.data.name = self.name
+        df.name = dataset_name
 
-        # Wrap up (rename version, cache dataset locally, and show spent time.)
-        self.version = 'download'
-        save_dataset(self.data, self.name, self.version)
+        return df
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
 
 
