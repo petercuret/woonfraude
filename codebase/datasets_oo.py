@@ -43,6 +43,7 @@ class MyDataset():
         try:
             self.data = load_dataset(self.name, version)
             self.version = version
+            print(f"Version {self.version} of dataset {self.name} loaded!")
         except FileNotFoundError as e:
             print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
             if version == 'download':
@@ -164,6 +165,15 @@ class BagDataset(MyDataset):
     # Set the class attributes.
     name = 'bag'
     table_name = 'bag_nummeraanduiding'
+    id_column = 'id'
+
+
+class HotlineDataset(MyDataset):
+    """Create a dataset for the hotline data."""
+
+    # Set the class attributes.
+    name = 'hotline'
+    table_name = 'bwv_hotline_melding'
     id_column = 'id'
 
 
