@@ -25,10 +25,12 @@ class MyDataset():
     name = None
     table_name = None
     id_column = None
+    data = None
+    version = None
+
 
     def __init__(self):
-        self.data = None
-        self.version = None
+        pass
 
 
     @classmethod
