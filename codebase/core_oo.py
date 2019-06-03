@@ -31,10 +31,40 @@ import combine_oo
 
 
 # Download (or load cached versions of) the datasets.
-# zaken = ZakenDataset.load('download')
-# stadia = StadiaDataset.load('download')
-# personen = PersonenDataset.load('download')
-# bag = BagDataset.load('download')
+zaken = ZakenDataset()
+zaken.load('download')
+
+stadia = StadiaDataset()
+stadia.load('download')
+
+personen = PersonenDataset()
+personen.load('download')
+
+# BAG heeft momenteel duplicate column indices. Opslaan met df.to_hdf() gaat daarom niet,
+# geeft deze error: "ValueError: Columns index has to be unique for fixed format"
+bag = BagDataset()
+bag.load('download')
+bag.bag_fix()
+
+
+bagPipeline = Pipeline(steps=[
+    ('clean', CleanTransformer(
+        id_column=bag.id_column,
+        drop_duplicates=True,
+        drop_columns=['_openbare_ruimte_naam_1', '_openbare_ruimte_naam_2', 'mutatie_gebruiker',
+                      'mutatie_gebruiker_1', 'mutatie_gebruiker_2', 'mutatie_gebruiker_3',
+                      'huisnummer', '_huisnummer_1', 'huisletter', '_huisletter_1',
+                      '_huisnummer_toevoeging', '_huisnummer_toevoeging_1', 'date_modified_1',
+                      'date_modified_2', 'date_modified_3', 'geometrie', 'geometrie_1'],
+        fix_date_columns=[],
+        lower_string_columns=True,
+        impute_missing_values=True,
+        fillna_columns=True)
+    )
+    ])
+
+hotline = HotlineDataset()
+hotline.load('download')
 
 
 adres_remove = [# Remove because cols do not exists when melding is received
@@ -78,20 +108,21 @@ adres_remove = [# Remove because cols do not exists when melding is received
                     'a_dam_bag',
                     'landelijk_bag']
 
-# adres = AdresDataset.load('download')
-# adresPipeline = Pipeline(steps=[
-#     ('clean', CleanTransformer(
-#         id_column=adres.id_column,
-#         drop_duplicates=True,
-#         drop_columns=adres_remove,
-#         fix_date_columns=['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'],
-#         lower_string_columns=True,
-#         impute_missing_values=True,
-#         fillna_columns=True)
-#     ),
-#     ('extract', FeatureExtractionTransformer(
-#         text_features_cols_hot=[],
-#         categorical_cols_hot=['toev', 'pvh_omschr', 'sbw_omschr', 'sbv_omschr'],
-#         categorical_cols_no_hot=[],
-#         ))
-#     ])
+adres = AdresDataset()
+adres.load('download')
+adresPipeline = Pipeline(steps=[
+    ('clean', CleanTransformer(
+        id_column=adres.id_column,
+        drop_duplicates=True,
+        drop_columns=adres_remove,
+        fix_date_columns=['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'],
+        lower_string_columns=True,
+        impute_missing_values=True,
+        fillna_columns=True)
+    ),
+    ('extract', FeatureExtractionTransformer(
+        text_features_cols_hot=[],
+        categorical_cols_hot=['toev', 'pvh_omschr', 'sbw_omschr', 'sbv_omschr'],
+        categorical_cols_no_hot=[],
+        ))
+    ])

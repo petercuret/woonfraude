@@ -10,6 +10,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 from pathlib import Path
 import pandas.io.sql as sqlio
 import pandas as pd
+import requests
 import psycopg2
 import time
 # from torch.utils.data import Dataset
@@ -33,8 +34,9 @@ class MyDataset():
 
 
     @classmethod
-    def save(self, version):
+    def save(self):
         """Save a previously processed version of the dataset."""
+        print(self.name, self.version)
         save_dataset(self.data, self.name, self.version)
 
 
@@ -44,9 +46,9 @@ class MyDataset():
         try:
             self.data = load_dataset(self.name, version)
             self.version = version
-            print(f"Version {self.version} of dataset {self.name} loaded!")
+            print(f"Version '{self.version}' of dataset '{self.name}' loaded!")
         except FileNotFoundError as e:
-            print(f"Sorry, version {version} of dataset {self.name} is not available on local storage.")
+            print(f"Sorry, version '{version}' of dataset '{self.name}' is not available on local storage.")
             if version == 'download':
                 print("The software will now download the dataset instead.")
                 self._force_download()
@@ -82,6 +84,13 @@ def download_dataset(dataset_name, table_name, limit=9223372036854775807):
         start = time.time()
         print("Starting data download...")
 
+        if dataset_name == 'bbga':
+            # Download BBGA file, interpret as dataframe, and return.
+            url = "https://api.data.amsterdam.nl/dcatd/datasets/G5JpqNbhweXZSw/purls/LXGOPUQQfAXBbg"
+            res = requests.get(url)
+            df = pd.read_csv(res.content)
+            return df
+
         # Create a server connection.
         # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
         conn = psycopg2.connect(host = config.HOST,
@@ -115,8 +124,22 @@ def download_dataset(dataset_name, table_name, limit=9223372036854775807):
         # Name dataframe according to table name. Beware: name will be removed by pickling.
         df.name = dataset_name
 
+        if dataset_name == 'bag':
+            df = apply_bag_colname_fix(df)
+
         return df
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
+
+
+def apply_bag_colname_fix(df):
+    """Fix BAG columns directly after download."""
+
+    # Rename duplicate columns using a suffix _idx.
+    cols = pd.Series(df.columns)
+    for dup in cols[cols.duplicated()].unique():
+        cols[cols[cols == dup].index.values.tolist()] = [dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
+    df.columns = cols
+    return df
 
 
 class AdresDataset(MyDataset):
@@ -168,6 +191,34 @@ class BagDataset(MyDataset):
     table_name = 'bag_nummeraanduiding'
     id_column = 'id'
 
+    @classmethod
+    def bag_fix(self):
+        """Apply specific fixes for the BAG dataset."""
+
+        df = self.data
+
+        # Merge columns.
+        l_merge = ['_gebiedsgerichtwerken_id', 'indicatie_geconstateerd', 'indicatie_in_onderzoek', '_grootstedelijkgebied_id', 'buurt_id']
+        for m in l_merge:
+            df[m] = df[m].combine_first(df[m + '_2'])
+            df[m] = df[m].combine_first(df[m + '_1'])
+            df.drop(columns=[m + '_2', m + '_1'], inplace=True)
+
+        # Rename columns.
+        d_rename = {}
+        l_rename = ['openbareruimte_naam', 'id', 'landelijk_id', 'status_id']
+        for r in l_rename:
+            d_rename[r] = r + '_nummeraanduiding'
+            d_rename[r + '_1'] = r + '_ligplaats'
+            d_rename[r + '_2'] = r + '_standplaats'
+            d_rename[r + '_3'] = r + '_verblijfsobject'
+        df = df.rename(index=str, columns=d_rename)
+
+        # Change dataset version, and save this version of the dataset.
+        # self.set_version('columnFix')
+        self.version = 'columnFix'
+        self.save()
+
 
 class HotlineDataset(MyDataset):
     """Create a dataset for the hotline data."""
@@ -176,6 +227,13 @@ class HotlineDataset(MyDataset):
     name = 'hotline'
     table_name = 'bwv_hotline_melding'
     id_column = 'id'
+
+
+class BbgaDataset(MyDataset):
+    """Create a dataset for the BBGA data."""
+
+    # Set the class attributes.
+    name = 'bbga'
 
 
 # Define HOME and DATA_PATH on a global level
