@@ -33,14 +33,12 @@ class MyDataset():
         self._version = None
 
 
-    @classmethod
     def save(self):
         """Save a previously processed version of the dataset."""
         print(self.name, self.version)
         save_dataset(self.data, self.name, self.version)
 
 
-    @classmethod
     def load(self, version):
         """Load a previously processed version of the dataset."""
         try:
@@ -56,7 +54,6 @@ class MyDataset():
                 print("Please try loading another version, or creating the version you need.")
 
 
-    @classmethod
     def download(self, force=False, limit: int = 9223372036854775807):
         """Download a copy of the dataset, or restore a previous version if available."""
         if force == True:
@@ -70,7 +67,6 @@ class MyDataset():
                 self._force_download()
 
 
-    @classmethod
     def _force_download(self, limit=9223372036854775807):
         """Force a dataset download."""
         self.data = download_dataset(self.name, self.table_name, limit)
@@ -150,7 +146,6 @@ class AdresDataset(MyDataset):
     table_name = 'import_adres'
     id_column = 'adres_id'
 
-    @classmethod
     def extract_leegstand(self):
         """Create a column indicating leegstand (no inhabitants on the address)."""
         self.data['leegstand'] = (self.data.inwnrs == 0)
@@ -191,7 +186,6 @@ class BagDataset(MyDataset):
     table_name = 'bag_nummeraanduiding'
     id_column = 'id'
 
-    @classmethod
     def bag_fix(self):
         """Apply specific fixes for the BAG dataset."""
 

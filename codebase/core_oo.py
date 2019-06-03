@@ -31,14 +31,14 @@ import combine_oo
 
 
 # Download (or load cached versions of) the datasets.
-zaken = ZakenDataset()
-zaken.load('download')
+# zaken = ZakenDataset()
+# zaken.load('download')
 
-stadia = StadiaDataset()
-stadia.load('download')
+# stadia = StadiaDataset()
+# stadia.load('download')
 
-personen = PersonenDataset()
-personen.load('download')
+# personen = PersonenDataset()
+# personen.load('download')
 
 # BAG heeft momenteel duplicate column indices. Opslaan met df.to_hdf() gaat daarom niet,
 # geeft deze error: "ValueError: Columns index has to be unique for fixed format"
