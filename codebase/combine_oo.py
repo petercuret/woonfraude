@@ -14,7 +14,6 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 
 # Import statements
-from sklearn.base import BaseEstimator, TransformerMixin
 from pathlib import Path
 import pandas.io.sql as sqlio
 import pandas as pd
@@ -177,7 +176,7 @@ def add_person_features(df, personen):
         df[f'gezinsverhouding_{i}'] = 0
         df[f'percentage_gezinsverhouding_{i}'] = 0.
     print("Now looping over all rows in the main dataframe in order to add person information...")
-    for i in df.index[:10]:
+    for i in df.index:
         if i % 1000 == 0:
             print(i)
         row = df.iloc[i]
