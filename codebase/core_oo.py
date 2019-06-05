@@ -43,8 +43,8 @@ import combine_oo
 # BAG heeft momenteel duplicate column indices. Opslaan met df.to_hdf() gaat daarom niet,
 # geeft deze error: "ValueError: Columns index has to be unique for fixed format"
 bag = BagDataset()
-bag.load('download')
-bag.bag_fix()
+bag.load('columnFix')
+# bag.bag_fix()
 
 
 bagPipeline = Pipeline(steps=[

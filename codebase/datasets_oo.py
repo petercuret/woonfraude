@@ -78,7 +78,7 @@ def download_dataset(dataset_name, table_name, limit=9223372036854775807):
         """Download a new copy of the dataset from its source."""
 
         start = time.time()
-        print("Starting data download...")
+        print(f"#### Starting download of dataset '{dataset_name}'...")
 
         if dataset_name == 'bbga':
             # Download BBGA file, interpret as dataframe, and return.
@@ -123,8 +123,8 @@ def download_dataset(dataset_name, table_name, limit=9223372036854775807):
         if dataset_name == 'bag':
             df = apply_bag_colname_fix(df)
 
-        return df
         print("\n#### ...download done! Spent %.2f seconds.\n" % (time.time()-start))
+        return df
 
 
 def apply_bag_colname_fix(df):
@@ -146,9 +146,30 @@ class AdresDataset(MyDataset):
     table_name = 'import_adres'
     id_column = 'adres_id'
 
+
     def extract_leegstand(self):
         """Create a column indicating leegstand (no inhabitants on the address)."""
-        self.data['leegstand'] = (self.data.inwnrs == 0)
+        self.data['leegstand'] = ~self.data.inwnrs.notnull()
+
+
+    def enrich_woning_id(self):
+        """Add woning ids to the adres dataframe."""
+        adres_periodes = download_dataset('bwv_adres_periodes', 'bwv_adres_periodes')
+        self.data = self.data.merge(adres_periodes, how='left', left_on='adres_id', right_on='ads_id')
+
+
+    def add_hotline_features(self, hotline_df):
+        """Add the hotline features to the adres dataframe."""
+        # Create a temporary merged df using the adres and hotline dataframes.
+        merge = self.data.merge(hotline_df, on='wng_id', how='left')
+        # Create a group for each adres_id
+        adres_groups = merge.groupby(by='adres_id')
+        # Count the number of hotline meldingen per group/adres_id
+        hotline_counts = adres_groups['id'].agg(['count'])
+        # Rename column
+        hotline_counts.columns = ['aantal_hotline_meldingen']
+        # Enrich the 'adres' dataframe with the computed hotline counts.
+        self.data = self.data.merge(hotline_counts, on='adres_id', how='left')
 
 
 class ZakenDataset(MyDataset):
