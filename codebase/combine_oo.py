@@ -14,6 +14,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 
 # Import statements
+from sklearn.base import BaseEstimator, TransformerMixin
 from pathlib import Path
 import pandas.io.sql as sqlio
 import pandas as pd

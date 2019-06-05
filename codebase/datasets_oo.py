@@ -150,12 +150,16 @@ class AdresDataset(MyDataset):
     def extract_leegstand(self):
         """Create a column indicating leegstand (no inhabitants on the address)."""
         self.data['leegstand'] = ~self.data.inwnrs.notnull()
+        self.version += '_extractLeegstand'
+        self.save()
 
 
     def enrich_woning_id(self):
         """Add woning ids to the adres dataframe."""
         adres_periodes = download_dataset('bwv_adres_periodes', 'bwv_adres_periodes')
-        self.data = self.data.merge(adres_periodes, how='left', left_on='adres_id', right_on='ads_id')
+        self.data = self.data.merge(adres_periodes[['ads_id', 'wng_id']], how='left', left_on='adres_id', right_on='ads_id')
+        self.version += '_enrichWoningId'
+        self.save()
 
 
     def add_hotline_features(self, hotline_df):
@@ -164,12 +168,15 @@ class AdresDataset(MyDataset):
         merge = self.data.merge(hotline_df, on='wng_id', how='left')
         # Create a group for each adres_id
         adres_groups = merge.groupby(by='adres_id')
-        # Count the number of hotline meldingen per group/adres_id
+        # Count the number of hotline meldingen per group/adres_id.
+        # 'id' should be the primary key of hotline df, so it is usable for hotline entry counting.
         hotline_counts = adres_groups['id'].agg(['count'])
         # Rename column
         hotline_counts.columns = ['aantal_hotline_meldingen']
         # Enrich the 'adres' dataframe with the computed hotline counts.
         self.data = self.data.merge(hotline_counts, on='adres_id', how='left')
+        self.version += '_addHotlineFeatures'
+        self.save()
 
 
 class ZakenDataset(MyDataset):
@@ -212,6 +219,14 @@ class BagDataset(MyDataset):
 
         df = self.data
 
+        # Drop columns
+        df.drop(columns=['_openbare_ruimte_naam_1', '_openbare_ruimte_naam_2', 'mutatie_gebruiker',
+                         'mutatie_gebruiker_1', 'mutatie_gebruiker_2', 'mutatie_gebruiker_3',
+                         'huisnummer', '_huisnummer_1', 'huisletter', '_huisletter_1',
+                         '_huisnummer_toevoeging', '_huisnummer_toevoeging_1', 'date_modified_1',
+                         'date_modified_2', 'date_modified_3', 'geometrie', 'geometrie_1'],
+                inplace=True)
+
         # Merge columns.
         l_merge = ['_gebiedsgerichtwerken_id', 'indicatie_geconstateerd', 'indicatie_in_onderzoek', '_grootstedelijkgebied_id', 'buurt_id']
         for m in l_merge:
@@ -219,9 +234,14 @@ class BagDataset(MyDataset):
             df[m] = df[m].combine_first(df[m + '_1'])
             df.drop(columns=[m + '_2', m + '_1'], inplace=True)
 
+        # Merge columns v2. (altijd none op 2 na 0 & 3)
+        l_merge = ['document_mutatie', 'document_nummer', 'begin_geldigheid', 'einde_geldigheid']
+        # DIT NOG SCHRIJVEN, KOLOM 0 MOET BLIJVEN, EN KOLOMMEN 1,2,3 MOETEN SAMENGEVOEGD OOK BLIJVEN.
+
+
         # Rename columns.
         d_rename = {}
-        l_rename = ['openbareruimte_naam', 'id', 'landelijk_id', 'status_id']
+        l_rename = ['_openbare_ruimte_naam', 'id', 'landelijk_id', 'status_id']
         for r in l_rename:
             d_rename[r] = r + '_nummeraanduiding'
             d_rename[r + '_1'] = r + '_ligplaats'
