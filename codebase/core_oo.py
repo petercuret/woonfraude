@@ -118,30 +118,6 @@ personenPipeline = Pipeline(steps=[
 
 #######################################################
 # Clean BAG dataset
-bag_remove = ['einde_geldigheid@bag',               # Only 2 entries in column.
-              'verhuurbare_eenheden@bag',           # Only ~2k entries in column.
-              'geometrie@bag',                      # Needs a lot of processing before being useful.
-              'bron_id@bag',                        # Only 2 entries in column.
-              'locatie_ingang_id@bag',              # Only 2 entries in column.
-              'reden_afvoer_id@bag',                # Only a few entries in column.
-              '_gebiedsgerichtwerken_id@bag',       # Superfluous (gebied).
-              '_grootstedelijkgebied_id@bag',       # Superfluous (grootstedelijkgebied).
-              'buurt_id@bag',                       # Superfluous (buurt).
-              '_openbare_ruimte_naam@bag',          # Superfluous (straatnaam).
-              '_huisnummer@bag',                    # Superfluous (huisnummer).
-              '_huisletter@bag',                    # Superfluous (huisletter).
-              '_huisnummer_toevoeging@bag',         # Superfluous (huisnummer toevoeging).
-              'vervallen@bag',                      # Superfluous (all values in col are equal).
-              'mutatie_gebruiker@bag',              # Superfluous (all values in col are equal).
-              'document_mutatie@bag',               # Not available at time of signal.
-              'date_modified@bag',                  # Not available at time of signal.
-              'document_nummer@bag',                # Not needed? (Swaan?)
-              'status_coordinaat_omschrijving@bag', # Not needed? (Swaan?)
-              'type_woonobject_code@bag',           # Not needed? (Swaan?)
-              'id@bag',                             # Not needed.
-              'landelijk_id@bag'                    # Not needed.
-              ]
-
 bagPipeline = Pipeline(steps=[
     ('clean', CleanTransformer(
         id_column=bag.id_column,
@@ -152,13 +128,17 @@ bagPipeline = Pipeline(steps=[
         impute_missing_values=True,
         impute_missing_values_mode=['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag',
                                     'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'],
-        fillna_columns=){'type_woonobject_omschrijving': 'None',
+        fillna_columns={'_huisnummer@bag': 0
+                         '_huisletter@bag': 'None',
+                         '_openbare_ruimte_naam@bag': 'None',
+                         '_huisnummer_toevoeging@bag': 'None',
+                         'type_woonobject_omschrijving@bag': 'None',
                          'eigendomsverhouding_id@bag': 'None',
                          'financieringswijze_id@bag': -1,
                          'gebruik_id@bag': -1,
                          'reden_opvoer_id@bag': -1,
                          'status_id@bag': -1,
-                         'toegang_id@bag': 'None'}
+                         'toegang_id@bag': 'None'})
     ),
     ('extract', FeatureExtractionTransformer(
         categorical_cols_hot=['status_coordinaat_code@bag', 'type_woonobject_omschrijving@bag',
@@ -225,16 +205,42 @@ adres_remove = [# Remove because cols do not exists when melding is received
                     'a_dam_bag',
                     'landelijk_bag']
 
+bag_remove = ['einde_geldigheid@bag',               # Only 2 entries in column.
+              'verhuurbare_eenheden@bag',           # Only ~2k entries in column.
+              'geometrie@bag',                      # Needs a lot of processing before being useful.
+              'bron_id@bag',                        # Only 2 entries in column.
+              'locatie_ingang_id@bag',              # Only 2 entries in column.
+              'reden_afvoer_id@bag',                # Only a few entries in column.
+              '_gebiedsgerichtwerken_id@bag',       # Superfluous (gebied).
+              '_grootstedelijkgebied_id@bag',       # Superfluous (grootstedelijkgebied).
+              'buurt_id@bag',                       # Superfluous (buurt).
+              # ONDERSTAANDE 4 KOLOMMEN KONDEN EERDER NIET WEG IVM MATCH MET ADRES DATAFRAME.
+              # DEZE MOETEN NU WEL WEG, DAAROM WORDT NU HIER ALLES WEGGEHAALD.
+              '_openbare_ruimte_naam@bag',          # Superfluous (straatnaam).
+              '_huisnummer@bag',                    # Superfluous (huisnummer).
+              '_huisletter@bag',                    # Superfluous (huisletter).
+              '_huisnummer_toevoeging@bag',         # Superfluous (huisnummer toevoeging).
+              'vervallen@bag',                      # Superfluous (all values in col are equal).
+              'mutatie_gebruiker@bag',              # Superfluous (all values in col are equal).
+              'document_mutatie@bag',               # Not available at time of signal.
+              'date_modified@bag',                  # Not available at time of signal.
+              'document_nummer@bag',                # Not needed? (Swaan?)
+              'status_coordinaat_omschrijving@bag', # Not needed? (Swaan?)
+              'type_woonobject_code@bag',           # Not needed? (Swaan?)
+              'id@bag',                             # Not needed.
+              'landelijk_id@bag'                    # Not needed.
+              ]
+
 # Hier de extract stap weghalen? Deze past waarschijnlijk beter na het combinen v/d datasets.
 adresPipeline = Pipeline(steps=[
     ('clean', CleanTransformer(
         id_column=adres.id_column,
         drop_duplicates=True,
-        drop_columns=adres_remove,
+        drop_columns=adres_remove + bag_remove,
         fix_date_columns=['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'],
         lower_string_columns=True,
         impute_missing_values=True,
-        fillna_columns=True)
+        fillna_columns={'hsnr': 0, 'sttnaam': 'None', 'hsltr': 'None', 'toev': 'None'})
     ),
     ('extract', FeatureExtractionTransformer(
         categorical_cols_hot=['toev', 'pvh_omschr', 'sbw_omschr', 'sbv_omschr'],

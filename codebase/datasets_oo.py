@@ -164,14 +164,70 @@ class AdresDataset(MyDataset):
 
     def enrich_with_bag(self, bag):
         """Enrich the adres data with information from the BAG data. Uses the bag dataframe as input."""
-        # bag = prepare_bag(bag)
-        # adres = prepare_adres(adres)
+        bag = prepare_bag(bag)
+        self.data = prepare_adres(self.data)
         self.data = match_bwv_bag(self.data, bag)
-        # bag = replace_string_nan_bag(bag)
-        # adres = replace_string_nan_adres(adres)
+        self.data = replace_string_nan_adres(self.data)
         self.data = impute_values_for_bagless_addresses(self.data)
         self.version += '_bag'
         self.save()
+
+
+        def prepare_bag(bag):
+            # To lower
+            # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].str.lower()
+            # bag['_huisletter@bag'] = bag['_huisletter@bag'].str.lower()
+            # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].str.lower()
+
+            # To int
+            # bag['_huisnummer@bag'] = bag['_huisnummer@bag'].fillna(0).astype(int)
+            bag['_huisnummer@bag'] = bag['_huisnummer@bag'].astype(int)
+            bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(0, -1)
+
+            # Fillna and replace ''
+            # bag['_huisletter@bag'] = bag['_huisletter@bag'].fillna('None')
+            bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('', 'None')
+
+            # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].fillna('None')
+            bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].replace('', 'None')
+
+            # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].fillna('None')
+            bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('', 'None')
+            return bag
+
+
+        def prepare_adres(adres):
+            # To lower
+            # adres['sttnaam'] = adres['sttnaam'].str.lower()
+            # adres['hsltr'] = adres['hsltr'].str.lower()
+            # adres['toev'] = adres['toev'].str.lower()
+
+            # To int
+            # adres['hsnr'] = adres['hsnr'].fillna(0).astype(int)
+            adres['hsnr'] = adres['hsnr'].astype(int)
+            adres['hsnr'] = adres['hsnr'].replace(0, -1)
+
+            # Fillna
+            # adres['sttnaam'] = adres['sttnaam'].fillna('None')
+            # adres['hsltr'] = adres['hsltr'].fillna('None')
+            # adres['toev'] = adres['toev'].fillna('None')
+            return adres
+
+
+        # def replace_string_nan_bag(bag):
+        #     bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(-1, np.nan)
+        #     bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('None', np.nan)
+        #     bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].replace('None', np.nan)
+        #     bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('None', np.nan)
+        #     return bag
+
+
+        def replace_string_nan_adres(adres):
+            adres['hsnr'] = adres['hsnr'].replace(-1, np.nan)
+            adres['sttnaam'] = adres['sttnaam'].replace('None', np.nan)
+            adres['hsltr'] = adres['hsltr'].replace('None', np.nan)
+            adres['toev'] = adres['toev'].replace('None', np.nan)
+            return adres
 
 
         def match_bwv_bag(adres, bag):
