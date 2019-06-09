@@ -150,7 +150,7 @@ class AdresDataset(MyDataset):
     def extract_leegstand(self):
         """Create a column indicating leegstand (no inhabitants on the address)."""
         self.data['leegstand'] = ~self.data.inwnrs.notnull()
-        self.version += '_extractLeegstand'
+        self.version += '_Leegstand'
         self.save()
 
 
@@ -158,7 +158,7 @@ class AdresDataset(MyDataset):
         """Add woning ids to the adres dataframe."""
         adres_periodes = download_dataset('bwv_adres_periodes', 'bwv_adres_periodes')
         self.data = self.data.merge(adres_periodes[['ads_id', 'wng_id']], how='left', left_on='adres_id', right_on='ads_id')
-        self.version += '_enrichWoningId'
+        self.version += '_WoningId'
         self.save()
 
 
@@ -169,9 +169,9 @@ class AdresDataset(MyDataset):
         self.data = match_bwv_bag(self.data, bag)
         # bag = replace_string_nan_bag(bag)
         # adres = replace_string_nan_adres(adres)
-        impute_values_for_bagless_addresses(self.data)
-        self.data.name = 'adres'
-        return adres
+        self.data = impute_values_for_bagless_addresses(self.data)
+        self.version += '_Bag'
+        self.save()
 
 
         def match_bwv_bag(adres, bag):
@@ -222,7 +222,6 @@ class AdresDataset(MyDataset):
                           'landelijk_id@bag'                    # Not needed.
                           ]
             final_df.drop(columns=bag_remove, inplace=True)
-
             return final_df
 
 
@@ -359,7 +358,8 @@ class AdresDataset(MyDataset):
         print("...done!")
 
         self.data = adres
-
+        self.version += '_Personen'
+        self.save()
 
     def add_hotline_features(self, hotline_df):
         """Add the hotline features to the adres dataframe."""
@@ -374,7 +374,7 @@ class AdresDataset(MyDataset):
         hotline_counts.columns = ['aantal_hotline_meldingen']
         # Enrich the 'adres' dataframe with the computed hotline counts.
         self.data = self.data.merge(hotline_counts, on='adres_id', how='left')
-        self.version += '_addHotlineFeatures'
+        self.version += '_Hotline'
         self.save()
 
 
@@ -393,6 +393,8 @@ class ZakenDataset(MyDataset):
         These cases do not contain reliable samples.
         """
         self.data = self.data[~self.data.categorie.isin(['woningkwaliteit', 'afdeling vergunningen en beheer'])]
+        self.version += '_FilterCategories'
+        self.save()
 
 
    def keep_finished_cases(self, stadia):
@@ -437,6 +439,8 @@ class ZakenDataset(MyDataset):
 
         # Only keep the sleection of finished of cases.
         self.data = finished_cases
+        self.version += '_FinishedCases'
+        self.save()
 
 
 class StadiaDataset(MyDataset):
