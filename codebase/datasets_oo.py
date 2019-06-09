@@ -150,7 +150,7 @@ class AdresDataset(MyDataset):
     def extract_leegstand(self):
         """Create a column indicating leegstand (no inhabitants on the address)."""
         self.data['leegstand'] = ~self.data.inwnrs.notnull()
-        self.version += '_Leegstand'
+        self.version += '_leegstand'
         self.save()
 
 
@@ -158,7 +158,7 @@ class AdresDataset(MyDataset):
         """Add woning ids to the adres dataframe."""
         adres_periodes = download_dataset('bwv_adres_periodes', 'bwv_adres_periodes')
         self.data = self.data.merge(adres_periodes[['ads_id', 'wng_id']], how='left', left_on='adres_id', right_on='ads_id')
-        self.version += '_WoningId'
+        self.version += '_woningId'
         self.save()
 
 
@@ -170,7 +170,7 @@ class AdresDataset(MyDataset):
         # bag = replace_string_nan_bag(bag)
         # adres = replace_string_nan_adres(adres)
         self.data = impute_values_for_bagless_addresses(self.data)
-        self.version += '_Bag'
+        self.version += '_bag'
         self.save()
 
 
@@ -358,7 +358,7 @@ class AdresDataset(MyDataset):
         print("...done!")
 
         self.data = adres
-        self.version += '_Personen'
+        self.version += '_personen'
         self.save()
 
     def add_hotline_features(self, hotline_df):
@@ -374,7 +374,7 @@ class AdresDataset(MyDataset):
         hotline_counts.columns = ['aantal_hotline_meldingen']
         # Enrich the 'adres' dataframe with the computed hotline counts.
         self.data = self.data.merge(hotline_counts, on='adres_id', how='left')
-        self.version += '_Hotline'
+        self.version += '_hotline'
         self.save()
 
 
@@ -393,7 +393,7 @@ class ZakenDataset(MyDataset):
         These cases do not contain reliable samples.
         """
         self.data = self.data[~self.data.categorie.isin(['woningkwaliteit', 'afdeling vergunningen en beheer'])]
-        self.version += '_FilterCategories'
+        self.version += '_filterCategories'
         self.save()
 
 
@@ -439,7 +439,7 @@ class ZakenDataset(MyDataset):
 
         # Only keep the sleection of finished of cases.
         self.data = finished_cases
-        self.version += '_FinishedCases'
+        self.version += '_finishedCases'
         self.save()
 
 
