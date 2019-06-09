@@ -24,48 +24,166 @@ from clean_oo import CleanTransformer
 from  extract_features_oo import FeatureExtractionTransformer
 
 
-# NIET VERGETEN!!!!!!!!!!!!
-# adres_id moet verwijderd worden voordat learning plaatsvindt!
-# Anders kan direct op het id geleerd worden.
+# NOG TOEVOEGEN BIJ OMZETTING NAAR "PREPARE" NOTEBOOK:
+#   - STAPPEN OM PIPELINE UIT TE VOEREN
+#   - FEATURE SCALER IN PIPELINES
+#   - TRAIN/TEST SPLIT
+#   - MODEL TRAINING TEST!
+
+# TODO (optioneel): datasets_oo.enrich_with_woning_id download lokaal laten cachen
 
 
+#######################################################
 # Download (or load cached versions of) the datasets.
-# zaken = ZakenDataset()
-# zaken.load('download')
+adresDataset = AdresDataset()
+adresDataset.load('download')
+adresDataset.extract_leegstand()
+adresDataset.enrich_with_woning_id()
+# adresDataset.load('download_leegstand_woningId')
 
-# stadia = StadiaDataset()
-# stadia.load('download')
+zakenDataset = ZakenDataset()
+zakenDataset.load('download')
+zakenDataset.filter_categories()
+zakenDataset.load('download_filterCategories')
 
-# personen = PersonenDataset()
-# personen.load('download')
+stadiaDataset = StadiaDataset()
+stadiaDataset.load('download')
+stadiaDataset.add_zaak_stadium_ids()
+# stadiaDataset.load('download_ids')
 
-# BAG heeft momenteel duplicate column indices. Opslaan met df.to_hdf() gaat daarom niet,
-# geeft deze error: "ValueError: Columns index has to be unique for fixed format"
-bag = BagDataset()
-bag.load('columnFix')
-# bag.bag_fix()
+personenDataset = PersonenDataset()
+personenDataset.load('download')
 
+BagDataset = BagDataset()
+BagDataset.load('download')
+BagDataset.bag_fix()
+# BagDataset.load('download_columnFix')
+
+HotlineDataset = HotlineDataset()
+hotlineDataset.load('download')
+
+# Get path to home directory
+HOME = str(Path.home())
+#######################################################
+
+
+#######################################################
+# Clean zaken dataset
+zakenPipeline = Pipeline(steps=[
+    ('clean', CleanTransformer(
+        id_column=zakenDataset.id_column,
+        drop_duplicates=True,
+        fix_date_columns=['begindatum','einddatum', 'wzs_update_datumtijd'],
+        clean_dates=True,
+        lower_string_columns=True,
+        add_columns=[{'new_col': 'categorie', 'match_col':'beh_oms',
+                      'csv_path': 'f{HOME}/Documents/woonfraude/data/aanvulling_beh_oms.csv'}],
+        impute_missing_values=True,
+        fillna_columns=False)
+    ),
+    ('extract', FeatureExtractionTransformer(
+        categorical_cols_hot=['afg_code_beh', 'beh_code', 'eigenaar', 'categorie'])
+    )
+    ])
+#######################################################
+
+
+#######################################################
+# Clean stadia dataset
+stadiaPipeline = Pipeline(steps=[
+    ('clean', CleanTransformer(
+        id_column=stadiaDataset.id_column,
+        drop_duplicates=True,
+        fix_date_columns=['begindatum', 'peildatum', 'einddatum', 'date_created',
+                          'date_modified', 'wzs_update_datumtijd'],
+        clean_dates=True,
+        lower_string_columns=True,
+        add_columns=[{'new_col': 'label', 'match_col':'sta_oms',
+                      'csv_path': 'f{HOME}/Documents/woonfraude/data/aanvulling_sta_oms.csv'}],
+        impute_missing_values=True)
+    )])
+#######################################################
+
+
+#######################################################
+# Clean personen dataset
+personenPipeline = Pipeline(steps=[
+    ('clean', CleanTransformer(
+        id_column=personenDataset.id_column,
+        drop_duplicates=True,
+        lower_string_columns=True)
+    )])
+#######################################################
+
+
+#######################################################
+# Clean BAG dataset
+bag_remove = ['einde_geldigheid@bag',               # Only 2 entries in column.
+              'verhuurbare_eenheden@bag',           # Only ~2k entries in column.
+              'geometrie@bag',                      # Needs a lot of processing before being useful.
+              'bron_id@bag',                        # Only 2 entries in column.
+              'locatie_ingang_id@bag',              # Only 2 entries in column.
+              'reden_afvoer_id@bag',                # Only a few entries in column.
+              '_gebiedsgerichtwerken_id@bag',       # Superfluous (gebied).
+              '_grootstedelijkgebied_id@bag',       # Superfluous (grootstedelijkgebied).
+              'buurt_id@bag',                       # Superfluous (buurt).
+              '_openbare_ruimte_naam@bag',          # Superfluous (straatnaam).
+              '_huisnummer@bag',                    # Superfluous (huisnummer).
+              '_huisletter@bag',                    # Superfluous (huisletter).
+              '_huisnummer_toevoeging@bag',         # Superfluous (huisnummer toevoeging).
+              'vervallen@bag',                      # Superfluous (all values in col are equal).
+              'mutatie_gebruiker@bag',              # Superfluous (all values in col are equal).
+              'document_mutatie@bag',               # Not available at time of signal.
+              'date_modified@bag',                  # Not available at time of signal.
+              'document_nummer@bag',                # Not needed? (Swaan?)
+              'status_coordinaat_omschrijving@bag', # Not needed? (Swaan?)
+              'type_woonobject_code@bag',           # Not needed? (Swaan?)
+              'id@bag',                             # Not needed.
+              'landelijk_id@bag'                    # Not needed.
+              ]
 
 bagPipeline = Pipeline(steps=[
     ('clean', CleanTransformer(
         id_column=bag.id_column,
         drop_duplicates=True,
-        drop_columns=['_openbare_ruimte_naam_1', '_openbare_ruimte_naam_2', 'mutatie_gebruiker',
-                      'mutatie_gebruiker_1', 'mutatie_gebruiker_2', 'mutatie_gebruiker_3',
-                      'huisnummer', '_huisnummer_1', 'huisletter', '_huisletter_1',
-                      '_huisnummer_toevoeging', '_huisnummer_toevoeging_1', 'date_modified_1',
-                      'date_modified_2', 'date_modified_3', 'geometrie', 'geometrie_1'],
+        drop_columns=bag_remove,
         fix_date_columns=[],
         lower_string_columns=True,
         impute_missing_values=True,
-        fillna_columns=True)
+        impute_missing_values_mode=['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag',
+                                    'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'],
+        fillna_columns=){'type_woonobject_omschrijving': 'None',
+                         'eigendomsverhouding_id@bag': 'None',
+                         'financieringswijze_id@bag': -1,
+                         'gebruik_id@bag': -1,
+                         'reden_opvoer_id@bag': -1,
+                         'status_id@bag': -1,
+                         'toegang_id@bag': 'None'}
+    ),
+    ('extract', FeatureExtractionTransformer(
+        categorical_cols_hot=['status_coordinaat_code@bag', 'type_woonobject_omschrijving@bag',
+                              'eigendomsverhouding_id@bag', 'financieringswijze_id@bag',
+                              'gebruik_id@bag', 'ligging_id@bag', 'reden_opvoer_id@bag',
+                              'status_id@bag', 'toegang_id@bag'])
     )
     ])
-
-hotline = HotlineDataset()
-hotline.load('download')
+#######################################################
 
 
+#######################################################
+# Clean hotline dataset
+hotlinePipeline = Pipeline(steps=[
+    ('clean', CleanTransformer(
+        id_column=hotlineDataset.id_column,
+        drop_duplicates=True,
+        lower_string_columns=True,
+        impute_missing_values=True)
+    )])
+#######################################################
+
+
+#######################################################
+# Clean adres dataset
 adres_remove = [# Remove because cols do not exists when melding is received
                     'wzs_update_datumtijd',
                     # Remove because cols do not add extra information.
@@ -107,8 +225,7 @@ adres_remove = [# Remove because cols do not exists when melding is received
                     'a_dam_bag',
                     'landelijk_bag']
 
-adres = AdresDataset()
-adres.load('download')
+# Hier de extract stap weghalen? Deze past waarschijnlijk beter na het combinen v/d datasets.
 adresPipeline = Pipeline(steps=[
     ('clean', CleanTransformer(
         id_column=adres.id_column,
@@ -120,8 +237,23 @@ adresPipeline = Pipeline(steps=[
         fillna_columns=True)
     ),
     ('extract', FeatureExtractionTransformer(
-        text_features_cols_hot=[],
         categorical_cols_hot=['toev', 'pvh_omschr', 'sbw_omschr', 'sbv_omschr'],
-        categorical_cols_no_hot=[],
         ))
     ])
+#######################################################
+
+
+#######################################################
+# Combine datasets
+adresDataset.enrich_with_bag(bagDataset.data)
+adresDataset.enrich_with_personen_features(personenDataset.data)
+adresDataset.add_hotline_features(hotlineDataset.data)
+
+# Remove adres_id, since this is not a feature we want our algorihtm to try and learn from.
+adresDataset.data.drop(columns='adres_id', inplace=True)
+#######################################################
+
+
+#######################################################
+# Scale features?
+#######################################################

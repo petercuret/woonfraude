@@ -197,31 +197,6 @@ class AdresDataset(MyDataset):
             final_df = pd.merge(adres, df_result,  how='left', on='adres_id', suffixes=('', '_y'))
             final_df.drop(list(final_df.filter(regex='_y$')), axis=1, inplace=True)
 
-            # Drop unwanted bag columns
-            bag_remove = ['einde_geldigheid@bag',               # Only 2 entries in column.
-                          'verhuurbare_eenheden@bag',           # Only ~2k entries in column.
-                          'geometrie@bag',                      # Needs a lot of processing before being useful.
-                          'bron_id@bag',                        # Only 2 entries in column.
-                          'locatie_ingang_id@bag',              # Only 2 entries in column.
-                          'reden_afvoer_id@bag',                # Only a few entries in column.
-                          '_gebiedsgerichtwerken_id@bag',       # Superfluous (gebied).
-                          '_grootstedelijkgebied_id@bag',       # Superfluous (grootstedelijkgebied).
-                          'buurt_id@bag',                       # Superfluous (buurt).
-                          '_openbare_ruimte_naam@bag',          # Superfluous (straatnaam).
-                          '_huisnummer@bag',                    # Superfluous (huisnummer).
-                          '_huisletter@bag',                    # Superfluous (huisletter).
-                          '_huisnummer_toevoeging@bag',         # Superfluous (huisnummer toevoeging).
-                          'vervallen@bag',                      # Superfluous (all values in col are equal).
-                          'mutatie_gebruiker@bag',              # Superfluous (all values in col are equal).
-                          'document_mutatie@bag',               # Not available at time of signal.
-                          'date_modified@bag',                  # Not available at time of signal.
-                          'document_nummer@bag',                # Not needed? (Swaan?)
-                          'status_coordinaat_omschrijving@bag', # Not needed? (Swaan?)
-                          'type_woonobject_code@bag',           # Not needed? (Swaan?)
-                          'id@bag',                             # Not needed.
-                          'landelijk_id@bag'                    # Not needed.
-                          ]
-            final_df.drop(columns=bag_remove, inplace=True)
             return final_df
 
 
@@ -230,15 +205,15 @@ class AdresDataset(MyDataset):
             clean_oo.impute_missing_values(adres)
             clean_oo.impute_missing_values_mode(adres, ['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'])
             adres.fillna(value={'type_woonobject_omschrijving': 'None',
-                              'eigendomsverhouding_id@bag': 'None',
-                              'financieringswijze_id@bag': -1,
-                              'gebruik_id@bag': -1,
-                              'reden_opvoer_id@bag': -1,
-                              'status_id@bag': -1,
-                              'toegang_id@bag': 'None'}, inplace=True)
+                                'eigendomsverhouding_id@bag': 'None',
+                                'financieringswijze_id@bag': -1,
+                                'gebruik_id@bag': -1,
+                                'reden_opvoer_id@bag': -1,
+                                'status_id@bag': -1,
+                                'toegang_id@bag': 'None'}, inplace=True)
 
 
-    def extract_personen_features(self, personen):
+    def enrich_with_personen_features(self, personen):
         """Add aggregated features relating to persons to the address dataframe. Uses the personen dataframe as input."""
 
         # Create simple handle to the adres data.
@@ -361,10 +336,10 @@ class AdresDataset(MyDataset):
         self.version += '_personen'
         self.save()
 
-    def add_hotline_features(self, hotline_df):
+    def add_hotline_features(self, hotline):
         """Add the hotline features to the adres dataframe."""
         # Create a temporary merged df using the adres and hotline dataframes.
-        merge = self.data.merge(hotline_df, on='wng_id', how='left')
+        merge = self.data.merge(hotline, on='wng_id', how='left')
         # Create a group for each adres_id
         adres_groups = merge.groupby(by='adres_id')
         # Count the number of hotline meldingen per group/adres_id.
@@ -450,6 +425,14 @@ class StadiaDataset(MyDataset):
     name = 'stadia'
     table_name = 'import_stadia'
     id_column = 'stadium_id'
+
+
+    def add_zaak_stadium_ids(self):
+        """Add necessary id's to the dataset."""
+        self.data['zaak_id'] = self.data['adres_id'].astype(int).astype(str) + '_' + stadia['wvs_nr'].astype(int).astype(str)
+        self.data['stadium_id'] = self.data['zaak_id'] + '_' + stadia['sta_nr'].astype(int).astype(str)
+        self.version += '_ids'
+        self.save()
 
 
 class PersonenDataset(MyDataset):
