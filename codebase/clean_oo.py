@@ -30,15 +30,6 @@ import re
 import core
 
 
-###################
-# AANDACHTSPUNTEN #
-###################
-#
-# Waar kunnen de functies "filter_categories" en "select_closed_cases" het beste landen?
-#
-###################
-###################
-
 class CleanTransformer(BaseEstimator, TransformerMixin):
     """Class for performing cleaning steps on dataframes within the sklearn pipeline."""
 

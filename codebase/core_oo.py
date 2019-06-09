@@ -22,7 +22,6 @@ import config  # Load local passwords (config.py file expected in same folder as
 from datasets_oo import *
 from clean_oo import CleanTransformer
 from  extract_features_oo import FeatureExtractionTransformer
-import combine_oo
 
 
 # NIET VERGETEN!!!!!!!!!!!!

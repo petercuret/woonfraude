@@ -21,7 +21,7 @@ import pandas as pd
 import psycopg2
 import numpy as np
 
-
+'''
 class AdresCombineTransformer(BaseEstimator, TransformerMixin):
     """Class for combining/integrating multiple dataframes into a single dataframe."""
 
@@ -288,3 +288,5 @@ def select_closed_cases(adres, zaken, stadia):
 
     # Only return the relevant selection of cases.
     return selected_zaken
+
+'''
