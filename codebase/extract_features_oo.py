@@ -36,7 +36,6 @@ class FeatureExtractionTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        print(X)
         if self.text_features_cols_hot != []:
             X = extract_text_features_cols_hot(X, self.text_features_cols_hot)
         if self.categorical_cols_hot != []:
@@ -45,7 +44,7 @@ class FeatureExtractionTransformer(BaseEstimator, TransformerMixin):
             X = extract_categorical_cols_no_hot(X, self.categorical_cols_no_hot)
         if self.extract_date_features:
             X = extract_date_features(X)
-
+        return X
 
 ##################################
 ##### Features based on text #####

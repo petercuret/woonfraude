@@ -54,7 +54,6 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
         self.impute_missing_values_mode = impute_missing_values_mode
         self.fillna_columns = fillna_columns
 
-
     def fit(self, X, y=None):
         return self
 
@@ -75,7 +74,7 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
             impute_missing_values_mode(X, self.impute_missing_values_mode)
         if len(self.fillna_columns) > 0:
             X.fillna(value=self.fillna_columns)
-
+        return X
 
 def drop_duplicates(df, cols):
     """Drop duplicates in dataframe based on given column values. Print results in terminal."""
