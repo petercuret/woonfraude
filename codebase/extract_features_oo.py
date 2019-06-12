@@ -36,16 +36,15 @@ class FeatureExtractionTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
+        print(X)
         if self.text_features_cols_hot != []:
-            X = extract_hot_text_features_cols(X, self.text_features_cols_hot)
+            X = extract_text_features_cols_hot(X, self.text_features_cols_hot)
         if self.categorical_cols_hot != []:
-            X = extract_hot_categorical_cols(X, self.categorical_cols_hot)
+            X = extract_categorical_cols_hot(X, self.categorical_cols_hot)
         if self.categorical_cols_no_hot != []:
-            X = extract_no_hot_categorical_cols(X, self.categorical_cols_no_hot)
+            X = extract_categorical_cols_no_hot(X, self.categorical_cols_no_hot)
         if self.extract_date_features:
             X = extract_date_features(X)
-        if self.scale_data != []:
-            X = scale_data(X, cols)
 
 
 ##################################
@@ -62,7 +61,7 @@ def extract_text_features_col(df, col):
     col_features = pd.DataFrame(data=matrix, columns=features)
     return col_features
 
-def extract_hot_text_features_cols(df, cols):
+def extract_text_features_cols_hot(df, cols):
     """Create encoded feature columns for the dataframe, based on the defined text columns."""
     all_col_features = []
     for col in cols:
@@ -72,7 +71,7 @@ def extract_hot_text_features_cols(df, cols):
     df.drop(columns=cols, inplace=True)
     return df
 
-def extract_hot_categorical_cols(df, cols):
+def extract_categorical_cols_hot(df, cols):
     """Create HOT encoded feature columns for the dataframe, based on the defined categorical columns."""
     all_col_features = []
     for col in cols:
@@ -84,7 +83,7 @@ def extract_hot_categorical_cols(df, cols):
     df.drop(columns=cols, inplace=True)
     return df
 
-def extract_no_hot_categorical_cols(df, cols):
+def extract_categorical_cols_no_hot(df, cols):
     """Create a numerically encoded feature column in the df based on each defined categorical column."""
     all_col_features = []
     for col in cols:

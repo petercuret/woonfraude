@@ -43,13 +43,15 @@ adresDataset.enrich_with_woning_id()
 
 zakenDataset = ZakenDataset()
 zakenDataset.load('download')
+zakenDataset.add_categories()
 zakenDataset.filter_categories()
-zakenDataset.load('download_filterCategories')
+# zakenDataset.load('download_categories_filterCategories')
 
 stadiaDataset = StadiaDataset()
 stadiaDataset.load('download')
 stadiaDataset.add_zaak_stadium_ids()
-# stadiaDataset.load('download_ids')
+stadiaDataset.add_labels()
+# stadiaDataset.load('download_ids_labels')
 
 personenDataset = PersonenDataset()
 personenDataset.load('download')
@@ -85,6 +87,7 @@ zakenPipeline = Pipeline(steps=[
         categorical_cols_hot=['afg_code_beh', 'beh_code', 'eigenaar', 'categorie'])
     )
     ])
+zakenDataset.filter_categories()
 #######################################################
 
 

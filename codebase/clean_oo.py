@@ -40,7 +40,6 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
                  fix_date_columns: list = [],  # Contains list of date columns to fix.
                  clean_dates: bool = False,
                  lower_string_columns = True,  # Contains list of columns to lower strings in. If True, all string columns are lowered.
-                 add_columns: list = [],  # List should contain zero or more dicts with keys "new_col", "match_col" & "csv_path".
                  impute_missing_values: bool = True,  # Impute missing values in all numeric and timestamp columns using averages.
                  impute_missing_values_mode: list = [],  # Impute missing values for a list of specific columns using the mode.
                  fillna_columns: dict = {},  # Contains the following key-value pairs: key=column_name, value=value_to_be_imputed.
@@ -51,7 +50,6 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
         self.fix_date_columns = fix_date_columns
         self.clean_dates = clean_dates
         self.lower_string_columns = lower_string_columns
-        self.add_columns = add_columns
         self.impute_missing_values = impute_missing_values
         self.impute_missing_values_mode = impute_missing_values_mode
         self.fillna_columns = fillna_columns
@@ -71,9 +69,6 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
             clean_dates(X)
         if self.lower_string_columns:
             lower_strings(X)
-        if len(self.add_columns):
-            for col_dict in self.add_columns:
-                add_column(X, col_dict['new_col'], col_dict['match_col'], col_dict['csv_path'])
         if self.impute_missing_values:
             impute_missing_values(X)
         if len(self.impute_missing_values_mode) > 0:
@@ -124,34 +119,6 @@ def lower_strings(df, cols=True):
     for col in cols:
         df[col] = df[col].str.lower()
     print("Lowered strings of cols %s in df %s!" % (cols, df.name))
-
-
-def add_column(df, new_col, match_col, csv_path, key='lcolumn', val='ncolumn'):
-    """Add a new column to dataframe based on the match_column, and the mapping in the csv.
-
-    df: dataframe to be augmented.
-    new_col: name of new dataframe column.
-    match_col: colum to match with the csv variable 'key'.
-    csv_path: path to the csv file which is used for augmentation.
-    key: name of column in csv file containing keys.
-    val: name of column in csv file containing values.
-    """
-
-    # Load csv file.
-    df_label = pd.read_csv(csv_path)
-
-    # Transform csv string data to lowercase.
-    df_label[key] = df_label[key].str.lower()
-    df_label[val] = df_label[val].str.lower()
-
-    # Create a dict mapping: key -> val, based on the csv data.
-    label_dict = dict(zip(df_label[key], df_label[val]))
-
-    # Create a new dataframe column. If match_col matches with 'key', set the value to 'val'.
-    df[new_col] = df[match_col].apply(lambda x: label_dict.get(x))
-
-    # Print information about performed operation to terminal.
-    print(f"Dataframe \"%s\": added column \"%s\"!" % (df.name, new_col))
 
 
 def impute_missing_values(df):

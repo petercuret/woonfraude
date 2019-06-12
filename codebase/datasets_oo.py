@@ -16,7 +16,11 @@ import time
 # from torch.utils.data import Dataset
 
 # Import own modules
-import config
+import config, clean_oo
+
+# Define HOME and DATA_PATH on a global level
+HOME = str(Path.home())
+DATA_PATH = f'{HOME}/Documents/woonfraude/data/'
 
 
 class MyDataset():
@@ -35,7 +39,7 @@ class MyDataset():
 
     def save(self):
         """Save a previously processed version of the dataset."""
-        print(self.name, self.version)
+        print(f"Saving version '{self.version}' of dataframe '{self.name}'.")
         save_dataset(self.data, self.name, self.version)
 
 
@@ -43,6 +47,7 @@ class MyDataset():
         """Load a previously processed version of the dataset."""
         try:
             self.data = load_dataset(self.name, version)
+            self.data.name = self.name  # Set the df name again after loading (it is lost at saving).
             self.version = version
             print(f"Version '{self.version}' of dataset '{self.name}' loaded!")
         except FileNotFoundError as e:
@@ -418,6 +423,15 @@ class ZakenDataset(MyDataset):
     id_column = 'zaak_id'
 
 
+    def add_categories(self):
+        """Add categories to the zaken dataframe."""
+        clean_oo.lower_strings(self.data)
+        add_column(df=self.data, new_col='categorie', match_col='beh_oms',
+                   csv_path=f'{HOME}/Documents/woonfraude/data/aanvulling_beh_oms.csv')
+        self.version += '_categories'
+        self.save()
+
+
     def filter_categories(self):
         """
         Remove cases (zaken) with categories 'woningkwaliteit' or 'afdeling vergunninen beheer'.
@@ -428,7 +442,7 @@ class ZakenDataset(MyDataset):
         self.save()
 
 
-   def keep_finished_cases(self, stadia):
+    def keep_finished_cases(self, stadia):
         """Only keep cases (zaken) that have 100% certainly been finished. Uses stadia dataframe as input."""
 
         # Create simple handle to the zaken data.
@@ -485,9 +499,18 @@ class StadiaDataset(MyDataset):
 
     def add_zaak_stadium_ids(self):
         """Add necessary id's to the dataset."""
-        self.data['zaak_id'] = self.data['adres_id'].astype(int).astype(str) + '_' + stadia['wvs_nr'].astype(int).astype(str)
-        self.data['stadium_id'] = self.data['zaak_id'] + '_' + stadia['sta_nr'].astype(int).astype(str)
+        self.data['zaak_id'] = self.data['adres_id'].astype(int).astype(str) + '_' + self.data['wvs_nr'].astype(int).astype(str)
+        self.data['stadium_id'] = self.data['zaak_id'] + '_' + self.data['sta_nr'].astype(int).astype(str)
         self.version += '_ids'
+        self.save()
+
+
+    def add_labels(self):
+        """Add labels to the zaken dataframe."""
+        clean_oo.lower_strings(self.data)
+        add_column(df=self.data, new_col='label', match_col='sta_oms',
+                   csv_path=f'{HOME}/Documents/woonfraude/data/aanvulling_sta_oms.csv')
+        self.version += '_labels'
         self.save()
 
 
@@ -549,8 +572,7 @@ class BagDataset(MyDataset):
         df = df.rename(index=str, columns=d_rename)
 
         # Change dataset version, and save this version of the dataset.
-        # self.set_version('columnFix')
-        self.version = 'columnFix'
+        self.version += '_columnFix'
         self.save()
 
 
@@ -570,9 +592,36 @@ class BbgaDataset(MyDataset):
     name = 'bbga'
 
 
-# Define HOME and DATA_PATH on a global level
-HOME = str(Path.home())
-DATA_PATH = f'{HOME}/Documents/woonfraude/data/'
+######################
+## Helper functions ##
+######################
+
+def add_column(df, new_col, match_col, csv_path, key='lcolumn', val='ncolumn'):
+    """Add a new column to dataframe based on the match_column, and the mapping in the csv.
+
+    df: dataframe to be augmented.
+    new_col: name of new dataframe column.
+    match_col: colum to match with the csv variable 'key'.
+    csv_path: path to the csv file which is used for augmentation.
+    key: name of column in csv file containing keys.
+    val: name of column in csv file containing values.
+    """
+
+    # Load csv file.
+    df_label = pd.read_csv(csv_path)
+
+    # Transform csv string data to lowercase.
+    df_label[key] = df_label[key].str.lower()
+    df_label[val] = df_label[val].str.lower()
+
+    # Create a dict mapping: key -> val, based on the csv data.
+    label_dict = dict(zip(df_label[key], df_label[val]))
+
+    # Create a new dataframe column. If match_col matches with 'key', set the value to 'val'.
+    df[new_col] = df[match_col].apply(lambda x: label_dict.get(x))
+
+    # Print information about performed operation to terminal.
+    print(f"Dataframe \"%s\": added column \"%s\"!" % (df.name, new_col))
 
 
 def save_dataset(data, dataset_name, version):
