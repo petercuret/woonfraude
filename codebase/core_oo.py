@@ -78,8 +78,6 @@ zakenPipeline = Pipeline(steps=[
         fix_date_columns=['begindatum','einddatum', 'wzs_update_datumtijd'],
         clean_dates=True,
         lower_string_columns=True,
-        add_columns=[{'new_col': 'categorie', 'match_col':'beh_oms',
-                      'csv_path': 'f{HOME}/Documents/woonfraude/data/aanvulling_beh_oms.csv'}],
         impute_missing_values=True,
         fillna_columns=False)
     ),
@@ -101,8 +99,6 @@ stadiaPipeline = Pipeline(steps=[
                           'date_modified', 'wzs_update_datumtijd'],
         clean_dates=True,
         lower_string_columns=True,
-        add_columns=[{'new_col': 'label', 'match_col':'sta_oms',
-                      'csv_path': 'f{HOME}/Documents/woonfraude/data/aanvulling_sta_oms.csv'}],
         impute_missing_values=True)
     )])
 #######################################################
@@ -131,7 +127,7 @@ bagPipeline = Pipeline(steps=[
         impute_missing_values=True,
         impute_missing_values_mode=['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag',
                                     'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'],
-        fillna_columns={'_huisnummer@bag': 0
+        fillna_columns={'_huisnummer@bag': 0,
                          '_huisletter@bag': 'None',
                          '_openbare_ruimte_naam@bag': 'None',
                          '_huisnummer_toevoeging@bag': 'None',
