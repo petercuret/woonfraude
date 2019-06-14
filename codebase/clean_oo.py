@@ -141,6 +141,7 @@ def impute_missing_values(df):
     df.fillna(value=averages, inplace=True)
 
 
+# DEZE SCHRIJVEN MET STANDARD IMPUTER UIT SKLEARN! #
 def impute_missing_values_mode(df, cols):
     """Impute the mode value (most frequent) in empty values. Usable for fixing bool columns."""
 
