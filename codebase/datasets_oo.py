@@ -10,6 +10,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 from pathlib import Path
 import pandas.io.sql as sqlio
 import pandas as pd
+import numpy as np
 import requests
 import psycopg2
 import time
@@ -167,111 +168,112 @@ class AdresDataset(MyDataset):
         self.save()
 
 
+    def prepare_bag(self, bag):
+        # To lower
+        # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].str.lower()
+        # bag['_huisletter@bag'] = bag['_huisletter@bag'].str.lower()
+        # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].str.lower()
+
+        # To int
+        # bag['_huisnummer@bag'] = bag['_huisnummer@bag'].fillna(0).astype(int)
+        bag['_huisnummer@bag'] = bag['_huisnummer@bag'].astype(int)
+        bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(0, -1)
+
+        # Fillna and replace ''
+        # bag['_huisletter@bag'] = bag['_huisletter@bag'].fillna('None')
+        bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('', 'None')
+
+        # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].fillna('None')
+        bag['_openbare_ruimte_naam_verblijfsobject@bag'] = bag['_openbare_ruimte_naam_verblijfsobject@bag'].replace('', 'None')
+
+        # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].fillna('None')
+        bag['huisnummer_toevoeging@bag'] = bag['huisnummer_toevoeging@bag'].replace('', 'None')
+        return bag
+
+
+    def prepare_adres(self, adres):
+        # To lower
+        # adres['sttnaam'] = adres['sttnaam'].str.lower()
+        # adres['hsltr'] = adres['hsltr'].str.lower()
+        # adres['toev'] = adres['toev'].str.lower()
+
+        # To int
+        # adres['hsnr'] = adres['hsnr'].fillna(0).astype(int)
+        adres['hsnr'] = adres['hsnr'].astype(int)
+        adres['hsnr'] = adres['hsnr'].replace(0, -1)
+
+        # Fillna
+        # adres['sttnaam'] = adres['sttnaam'].fillna('None')
+        # adres['hsltr'] = adres['hsltr'].fillna('None')
+        # adres['toev'] = adres['toev'].fillna('None')
+        return adres
+
+
+    # def replace_string_nan_bag(bag):
+    #     bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(-1, np.nan)
+    #     bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('None', np.nan)
+    #     bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].replace('None', np.nan)
+    #     bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('None', np.nan)
+    #     return bag
+
+
+    def replace_string_nan_adres(self, adres):
+        adres['hsnr'] = adres['hsnr'].replace(-1, np.nan)
+        adres['sttnaam'] = adres['sttnaam'].replace('None', np.nan)
+        adres['hsltr'] = adres['hsltr'].replace('None', np.nan)
+        adres['toev'] = adres['toev'].replace('None', np.nan)
+        return adres
+
+
+    def match_bwv_bag(self, adres, bag):
+        # Merge dataframes on adres dataframe.
+        new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam_verblijfsobject@bag', '_huisnummer@bag'])
+
+        # Find id's that have a direct match and that have multiple matches
+        g = new_df.groupby('adres_id')
+        df_direct = g.filter(lambda x: len(x) == 1)
+        df_multiple = g.filter(lambda x: len(x) > 1)
+
+        # Make multiplematch more specific to construct perfect match
+        df_multiple = df_multiple[(df_multiple['hsltr'] == df_multiple['_huisletter@bag']) & (df_multiple['toev'] == df_multiple['huisnummer_toevoeging@bag'])]
+
+        # Concat df_direct and df_multiple
+        df_result = pd.concat([df_direct, df_multiple])
+
+        # Because of the seperation of an object, there are two matching objects. Keep the oldest object with definif point
+        df_result = df_result.sort_values(['adres_id', 'status_coordinaat_code@bag'])
+        df_result = df_result.drop_duplicates(subset='adres_id', keep='first')
+
+        # Add adresses without match
+        final_df = pd.merge(adres, df_result,  how='left', on='adres_id', suffixes=('', '_y'))
+        final_df.drop(list(final_df.filter(regex='_y$')), axis=1, inplace=True)
+
+        return final_df
+
+
+    def impute_values_for_bagless_addresses(self, adres):
+        """Impute values for adresses where no BAG-match could be found."""
+        clean_oo.impute_missing_values(adres)
+        # clean_oo.impute_missing_values_mode(adres, ['status_coordinaat_code@bag'])
+        adres.fillna(value={'type_woonobject_omschrijving': 'None',
+                            'eigendomsverhouding_id@bag': 'None',
+                            'financieringswijze_id@bag': -1,
+                            'gebruik_id@bag': -1,
+                            'reden_opvoer_id@bag': -1,
+                            'status_id@bag': -1,
+                            'toegang_id@bag': 'None'}, inplace=True)
+        return adres
+
+
     def enrich_with_bag(self, bag):
         """Enrich the adres data with information from the BAG data. Uses the bag dataframe as input."""
-        bag = prepare_bag(bag)
-        self.data = prepare_adres(self.data)
-        self.data = match_bwv_bag(self.data, bag)
-        self.data = replace_string_nan_adres(self.data)
-        self.data = impute_values_for_bagless_addresses(self.data)
+        bag = self.prepare_bag(bag)
+        self.data = self.prepare_adres(self.data)
+        self.data = self.match_bwv_bag(self.data, bag)
+        self.data = self.replace_string_nan_adres(self.data)
+        self.data = self.impute_values_for_bagless_addresses(self.data)
         self.version += '_bag'
         self.save()
-
-
-        def prepare_bag(bag):
-            # To lower
-            # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].str.lower()
-            # bag['_huisletter@bag'] = bag['_huisletter@bag'].str.lower()
-            # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].str.lower()
-
-            # To int
-            # bag['_huisnummer@bag'] = bag['_huisnummer@bag'].fillna(0).astype(int)
-            bag['_huisnummer@bag'] = bag['_huisnummer@bag'].astype(int)
-            bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(0, -1)
-
-            # Fillna and replace ''
-            # bag['_huisletter@bag'] = bag['_huisletter@bag'].fillna('None')
-            bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('', 'None')
-
-            # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].fillna('None')
-            bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].replace('', 'None')
-
-            # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].fillna('None')
-            bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('', 'None')
-            return bag
-
-
-        def prepare_adres(adres):
-            # To lower
-            # adres['sttnaam'] = adres['sttnaam'].str.lower()
-            # adres['hsltr'] = adres['hsltr'].str.lower()
-            # adres['toev'] = adres['toev'].str.lower()
-
-            # To int
-            # adres['hsnr'] = adres['hsnr'].fillna(0).astype(int)
-            adres['hsnr'] = adres['hsnr'].astype(int)
-            adres['hsnr'] = adres['hsnr'].replace(0, -1)
-
-            # Fillna
-            # adres['sttnaam'] = adres['sttnaam'].fillna('None')
-            # adres['hsltr'] = adres['hsltr'].fillna('None')
-            # adres['toev'] = adres['toev'].fillna('None')
-            return adres
-
-
-        # def replace_string_nan_bag(bag):
-        #     bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(-1, np.nan)
-        #     bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('None', np.nan)
-        #     bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].replace('None', np.nan)
-        #     bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('None', np.nan)
-        #     return bag
-
-
-        def replace_string_nan_adres(adres):
-            adres['hsnr'] = adres['hsnr'].replace(-1, np.nan)
-            adres['sttnaam'] = adres['sttnaam'].replace('None', np.nan)
-            adres['hsltr'] = adres['hsltr'].replace('None', np.nan)
-            adres['toev'] = adres['toev'].replace('None', np.nan)
-            return adres
-
-
-        def match_bwv_bag(adres, bag):
-            # Merge dataframes on adres dataframe.
-            new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam@bag', '_huisnummer@bag'])
-
-            # Find id's that have a direct match and that have multiple matches
-            g = new_df.groupby('adres_id')
-            df_direct = g.filter(lambda x: len(x) == 1)
-            df_multiple = g.filter(lambda x: len(x) > 1)
-
-            # Make multiplematch more specific to construct perfect match
-            df_multiple = df_multiple[(df_multiple['hsltr'] == df_multiple['_huisletter@bag']) & (df_multiple['toev'] == df_multiple['_huisnummer_toevoeging@bag'])]
-
-            # Concat df_direct and df_multiple
-            df_result = pd.concat([df_direct, df_multiple])
-
-            # Because of the seperation of an object, there are two matching objects. Keep the oldest object with definif point
-            df_result = df_result.sort_values(['adres_id', 'status_coordinaat_code@bag'])
-            df_result = df_result.drop_duplicates(subset='adres_id', keep='first')
-
-            # Add adresses without match
-            final_df = pd.merge(adres, df_result,  how='left', on='adres_id', suffixes=('', '_y'))
-            final_df.drop(list(final_df.filter(regex='_y$')), axis=1, inplace=True)
-
-            return final_df
-
-
-        def impute_values_for_bagless_addresses(adres):
-            """Impute values for adresses where no BAG-match could be found."""
-            clean_oo.impute_missing_values(adres)
-            clean_oo.impute_missing_values_mode(adres, ['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'])
-            adres.fillna(value={'type_woonobject_omschrijving': 'None',
-                                'eigendomsverhouding_id@bag': 'None',
-                                'financieringswijze_id@bag': -1,
-                                'gebruik_id@bag': -1,
-                                'reden_opvoer_id@bag': -1,
-                                'status_id@bag': -1,
-                                'toegang_id@bag': 'None'}, inplace=True)
 
 
     def enrich_with_personen_features(self, personen):
@@ -285,6 +287,11 @@ class AdresDataset(MyDataset):
         # Set all dates within range allowed by Pandas (584 years?)
         personen['geboortedatum'] = pd.to_datetime(personen['geboortedatum'], errors='coerce')
         # Get the most frequent birthdate (mode).
+
+
+        ###### TODO: CHECKEN WAAROM personen['geboortedatum'] ALLEEN MAAR NaT VALUES BEVAT!
+        ######       ER LIJKT IETS MIS TE GAAN MET DE VOORVERWERKING :(
+
         geboortedatum_mode = personen['geboortedatum'].mode()[0]
         # Compute the age (result is a TimeDelta).
         personen['leeftijd'] = today - personen['geboortedatum']
@@ -543,7 +550,8 @@ class BagDataset(MyDataset):
                 inplace=True)
 
         # Merge columns.
-        l_merge = ['_gebiedsgerichtwerken_id', 'indicatie_geconstateerd', 'indicatie_in_onderzoek', '_grootstedelijkgebied_id', 'buurt_id']
+        l_merge = ['_gebiedsgerichtwerken_id', 'indicatie_geconstateerd', 'indicatie_in_onderzoek',
+                   '_grootstedelijkgebied_id', 'buurt_id']
         for m in l_merge:
             self.data[m] = self.data[m].combine_first(self.data[m + '_2'])
             self.data[m] = self.data[m].combine_first(self.data[m + '_1'])

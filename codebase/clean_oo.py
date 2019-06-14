@@ -61,7 +61,7 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
         if self.drop_duplicates and self.id_column:
             drop_duplicates(X, self.id_column)
         if len(self.drop_columns) > 0:
-            X.drop(self.drop_columns, inplace=True)
+            X.drop(columns=self.drop_columns, inplace=True)
         if len(self.fix_date_columns) > 0:
             fix_dates(X, self.fix_date_columns)
         if self.clean_dates:
