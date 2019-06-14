@@ -529,15 +529,13 @@ class BagDataset(MyDataset):
     # Set the class attributes.
     name = 'bag'
     table_name = 'bag_nummeraanduiding'
-    id_column = 'id'
+    id_column = 'id_nummeraanduiding@bag'
 
     def bag_fix(self):
         """Apply specific fixes for the BAG dataset."""
 
-        df = self.data
-
         # Drop columns
-        df.drop(columns=['_openbare_ruimte_naam_1', '_openbare_ruimte_naam_2', 'mutatie_gebruiker',
+        self.data.drop(columns=['_openbare_ruimte_naam_1', '_openbare_ruimte_naam_2', 'mutatie_gebruiker',
                          'mutatie_gebruiker_1', 'mutatie_gebruiker_2', 'mutatie_gebruiker_3',
                          'huisnummer', '_huisnummer_1', 'huisletter', '_huisletter_1',
                          '_huisnummer_toevoeging', '_huisnummer_toevoeging_1', 'date_modified_1',
@@ -547,19 +545,17 @@ class BagDataset(MyDataset):
         # Merge columns.
         l_merge = ['_gebiedsgerichtwerken_id', 'indicatie_geconstateerd', 'indicatie_in_onderzoek', '_grootstedelijkgebied_id', 'buurt_id']
         for m in l_merge:
-            df[m] = df[m].combine_first(df[m + '_2'])
-            df[m] = df[m].combine_first(df[m + '_1'])
-            df.drop(columns=[m + '_2', m + '_1'], inplace=True)
+            self.data[m] = self.data[m].combine_first(self.data[m + '_2'])
+            self.data[m] = self.data[m].combine_first(self.data[m + '_1'])
+            self.data.drop(columns=[m + '_2', m + '_1'], inplace=True)
 
         # Merge columns v2. (altijd none op 2 na: 0 & 3)
         l_merge2 = ['document_mutatie', 'document_nummer', 'begin_geldigheid', 'einde_geldigheid']
         for m in l_merge2:
-            df[m] = df[m].combine_first(df[m + '_3'])
-            df[m] = df[m].combine_first(df[m + '_2'])
-            df[m] = df[m].combine_first(df[m + '_1'])
-            df.drop(columns=[m + '_3', m + '_2', m + '_1'], inplace=True)
-        # DIT NOG SCHRIJVEN, KOLOM 0 MOET BLIJVEN, EN KOLOMMEN 1,2,3 MOETEN SAMENGEVOEGD OOK BLIJVEN.
-
+            self.data[m] = self.data[m].combine_first(self.data[m + '_3'])
+            self.data[m] = self.data[m].combine_first(self.data[m + '_2'])
+            self.data[m] = self.data[m].combine_first(self.data[m + '_1'])
+            self.data.drop(columns=[m + '_3', m + '_2', m + '_1'], inplace=True)
 
         # Rename columns.
         d_rename = {}
@@ -569,7 +565,10 @@ class BagDataset(MyDataset):
             d_rename[r + '_1'] = r + '_ligplaats'
             d_rename[r + '_2'] = r + '_standplaats'
             d_rename[r + '_3'] = r + '_verblijfsobject'
-        df = df.rename(index=str, columns=d_rename)
+        self.data = self.data.rename(index=str, columns=d_rename)
+
+        # Add suffix for BAG dataframe.
+        self.data = self.data.add_suffix('@bag')
 
         # Change dataset version, and save this version of the dataset.
         self.version += '_columnFix'
