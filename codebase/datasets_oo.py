@@ -141,6 +141,43 @@ def apply_bag_colname_fix(df):
     for dup in cols[cols.duplicated()].unique():
         cols[cols[cols == dup].index.values.tolist()] = [dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
     df.columns = cols
+
+    # Rename huisnummer, huisletter and huisnummer_toevoeging columns to specify their table origin.
+    df = df.rename(index=str, columns={'huisnummer': 'huisnummer_nummeraanduiding',
+                                       'huisletter': 'huisletter_nummeraanduiding',
+                                       'huisnummer_toevoeging': 'huisnummer_toevoeging_nummeraanduiding'})
+
+    # Rename columns (two copies).
+    d_rename1 = {}
+    l_rename1 = ['_huisnummer', '_huisletter', '_huisnummer_toevoeging']
+    for r in l_rename1:
+        d_rename1[r] = r + '_ligplaats'
+        d_rename1[r + '_1'] = r + '_standplaats'
+        d_rename1[r + '_2'] = r + '_verblijfsobject'
+    df = df.rename(index=str, columns=d_rename1)
+
+    # Rename columns (three copies).
+    d_rename2 = {}
+    l_rename2 = ['indicatie_geconstateerd', 'indicatie_in_onderzoek', 'geometrie',
+                '_gebiedsgerichtwerken_id', '_grootstedelijkgebied_id', 'buurt_id']
+    for r in l_rename2:
+        d_rename2[r] = r + '_ligplaats'
+        d_rename2[r + '_1'] = r + '_standplaats'
+        d_rename2[r + '_2'] = r + '_verblijfsobject'
+    df = df.rename(index=str, columns=d_rename2)
+
+    # Rename columns (four copies).
+    d_rename3 = {}
+    l_rename3 = ['document_mutatie', 'document_nummer', 'begin_geldigheid', 'einde_geldigheid',
+                'mutatie_gebruiker', 'id', 'landelijk_id', 'vervallen', 'date_modified',
+                '_openbare_ruimte_naam', 'bron_id', 'status_id']
+    for r in l_rename3:
+        d_rename3[r] = r + '_nummeraanduiding'
+        d_rename3[r + '_1'] = r + '_ligplaats'
+        d_rename3[r + '_2'] = r + '_standplaats'
+        d_rename3[r + '_3'] = r + '_verblijfsobject'
+    df = df.rename(index=str, columns=d_rename3)
+
     return df
 
 
@@ -175,19 +212,19 @@ class AdresDataset(MyDataset):
         # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].str.lower()
 
         # To int
-        # bag['_huisnummer@bag'] = bag['_huisnummer@bag'].fillna(0).astype(int)
-        bag['_huisnummer@bag'] = bag['_huisnummer@bag'].astype(int)
-        bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(0, -1)
+        # bag['_huisnummer@bag'] = bag['_huisnummer_ligplaats@bag'].fillna(0).astype(int)
+        bag['_huisnummer_ligplaats'] = bag['_huisnummer_ligplaats'].astype(int)
+        bag['_huisnummer_ligplaats'] = bag['_huisnummer_ligplaats'].replace(0, -1)
 
         # Fillna and replace ''
         # bag['_huisletter@bag'] = bag['_huisletter@bag'].fillna('None')
-        bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('', 'None')
+        bag['_huisletter_ligplaats'] = bag['_huisletter_ligplaats'].replace('', 'None')
 
         # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].fillna('None')
-        bag['_openbare_ruimte_naam_verblijfsobject@bag'] = bag['_openbare_ruimte_naam_verblijfsobject@bag'].replace('', 'None')
+        bag['_openbare_ruimte_naam_verblijfsobject'] = bag['_openbare_ruimte_naam_verblijfsobject'].replace('', 'None')
 
         # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].fillna('None')
-        bag['huisnummer_toevoeging@bag'] = bag['huisnummer_toevoeging@bag'].replace('', 'None')
+        bag['_huisnummer_toevoeging_standplaats'] = bag['_huisnummer_toevoeging_standplaats'].replace('', 'None')
         return bag
 
 
@@ -227,7 +264,7 @@ class AdresDataset(MyDataset):
 
     def match_bwv_bag(self, adres, bag):
         # Merge dataframes on adres dataframe.
-        new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam_verblijfsobject@bag', '_huisnummer@bag'])
+        new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam_verblijfsobject', '_huisnummer_ligplaats'])
 
         # Find id's that have a direct match and that have multiple matches
         g = new_df.groupby('adres_id')
@@ -235,13 +272,13 @@ class AdresDataset(MyDataset):
         df_multiple = g.filter(lambda x: len(x) > 1)
 
         # Make multiplematch more specific to construct perfect match
-        df_multiple = df_multiple[(df_multiple['hsltr'] == df_multiple['_huisletter@bag']) & (df_multiple['toev'] == df_multiple['huisnummer_toevoeging@bag'])]
+        df_multiple = df_multiple[(df_multiple['hsltr'] == df_multiple['_huisletter_ligplaats']) & (df_multiple['toev'] == df_multiple['_huisnummer_toevoeging_standplaats'])]
 
         # Concat df_direct and df_multiple
         df_result = pd.concat([df_direct, df_multiple])
 
         # Because of the seperation of an object, there are two matching objects. Keep the oldest object with definif point
-        df_result = df_result.sort_values(['adres_id', 'status_coordinaat_code@bag'])
+        df_result = df_result.sort_values(['adres_id', 'status_coordinaat_code'])
         df_result = df_result.drop_duplicates(subset='adres_id', keep='first')
 
         # Add adresses without match
@@ -256,12 +293,12 @@ class AdresDataset(MyDataset):
         clean_oo.impute_missing_values(adres)
         # clean_oo.impute_missing_values_mode(adres, ['status_coordinaat_code@bag'])
         adres.fillna(value={'type_woonobject_omschrijving': 'None',
-                            'eigendomsverhouding_id@bag': 'None',
-                            'financieringswijze_id@bag': -1,
-                            'gebruik_id@bag': -1,
-                            'reden_opvoer_id@bag': -1,
-                            'status_id@bag': -1,
-                            'toegang_id@bag': 'None'}, inplace=True)
+                            'eigendomsverhouding_id': 'None',
+                            'financieringswijze_id': -1,
+                            'gebruik_id': -1,
+                            'reden_opvoer_id': -1,
+                            'status_id_verblijfsobject': -1,
+                            'toegang_id': 'None'}, inplace=True)
         return adres
 
 
@@ -536,47 +573,34 @@ class BagDataset(MyDataset):
     # Set the class attributes.
     name = 'bag'
     table_name = 'bag_nummeraanduiding'
-    id_column = 'id_nummeraanduiding@bag'
+    id_column = 'id_nummeraanduiding'
 
     def bag_fix(self):
         """Apply specific fixes for the BAG dataset."""
 
-        # Drop columns
-        self.data.drop(columns=['_openbare_ruimte_naam_1', '_openbare_ruimte_naam_2', 'mutatie_gebruiker',
-                         'mutatie_gebruiker_1', 'mutatie_gebruiker_2', 'mutatie_gebruiker_3',
-                         'huisnummer', '_huisnummer_1', 'huisletter', '_huisletter_1',
-                         '_huisnummer_toevoeging', '_huisnummer_toevoeging_1', 'date_modified_1',
-                         'date_modified_2', 'date_modified_3', 'geometrie', 'geometrie_1'],
-                inplace=True)
-
-        # Merge columns.
+        # Merge columns (three copies).
         l_merge = ['_gebiedsgerichtwerken_id', 'indicatie_geconstateerd', 'indicatie_in_onderzoek',
                    '_grootstedelijkgebied_id', 'buurt_id']
         for m in l_merge:
-            self.data[m] = self.data[m].combine_first(self.data[m + '_2'])
-            self.data[m] = self.data[m].combine_first(self.data[m + '_1'])
-            self.data.drop(columns=[m + '_2', m + '_1'], inplace=True)
+            self.data[m] = self.data[m + '_ligplaats'].combine_first(self.data[m + '_verblijfsobject'])
+            self.data[m] = self.data[m].combine_first(self.data[m + '_standplaats'])
+            self.data.drop(columns=[m + '_ligplaats', m + '_standplaats', m + '_verblijfsobject'], inplace=True)
 
-        # Merge columns v2. (altijd none op 2 na: 0 & 3)
+        # Merge columns (four copies). (almost always none, except for columns 0 & 3)
         l_merge2 = ['document_mutatie', 'document_nummer', 'begin_geldigheid', 'einde_geldigheid']
         for m in l_merge2:
-            self.data[m] = self.data[m].combine_first(self.data[m + '_3'])
-            self.data[m] = self.data[m].combine_first(self.data[m + '_2'])
-            self.data[m] = self.data[m].combine_first(self.data[m + '_1'])
-            self.data.drop(columns=[m + '_3', m + '_2', m + '_1'], inplace=True)
+            self.data[m] = self.data[m + '_nummeraanduiding'].combine_first(self.data[m + '_verblijfsobject'])
+            self.data[m] = self.data[m].combine_first(self.data[m + '_standplaats'])
+            self.data[m] = self.data[m].combine_first(self.data[m + '_ligplaats'])
+            self.data.drop(columns=[m + '_nummeraanduiding', m + '_ligplaats', m + '_standplaats', m + '_verblijfsobject'], inplace=True)
 
-        # Rename columns.
-        d_rename = {}
-        l_rename = ['_openbare_ruimte_naam', 'id', 'landelijk_id', 'status_id']
-        for r in l_rename:
-            d_rename[r] = r + '_nummeraanduiding'
-            d_rename[r + '_1'] = r + '_ligplaats'
-            d_rename[r + '_2'] = r + '_standplaats'
-            d_rename[r + '_3'] = r + '_verblijfsobject'
-        self.data = self.data.rename(index=str, columns=d_rename)
-
-        # Add suffix for BAG dataframe.
-        self.data = self.data.add_suffix('@bag')
+        # Drop columns
+        self.data.drop(columns=['_openbare_ruimte_naam_ligplaats','_openbare_ruimte_naam_standplaats', 'mutatie_gebruiker_nummeraanduiding',
+                                'mutatie_gebruiker_ligplaats', 'mutatie_gebruiker_standplaats', 'mutatie_gebruiker_verblijfsobject',
+                                'huisnummer_nummeraanduiding', '_huisnummer_standplaats', 'huisletter_nummeraanduiding', '_huisletter_standplaats',
+                                '_huisnummer_toevoeging_ligplaats', 'date_modified_ligplaats',
+                                'date_modified_standplaats', 'date_modified_verblijfsobject'],
+                                inplace=True)
 
         # Change dataset version, and save this version of the dataset.
         self.version += '_columnFix'
