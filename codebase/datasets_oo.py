@@ -206,52 +206,27 @@ class AdresDataset(MyDataset):
 
 
     def prepare_bag(self, bag):
-        # To lower
-        # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].str.lower()
-        # bag['_huisletter@bag'] = bag['_huisletter@bag'].str.lower()
-        # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].str.lower()
-
         # To int
-        # bag['_huisnummer@bag'] = bag['_huisnummer_ligplaats@bag'].fillna(0).astype(int)
-        bag['_huisnummer_ligplaats'] = bag['_huisnummer_ligplaats'].astype(int)
-        bag['_huisnummer_ligplaats'] = bag['_huisnummer_ligplaats'].replace(0, -1)
+        bag['_huisnummer_nummeraanduiding'] = bag['_huisnummer_nummeraanduiding'].astype(int)
+        bag['_huisnummer_nummeraanduiding'] = bag['_huisnummer_nummeraanduiding'].replace(0, -1)
 
         # Fillna and replace ''
-        # bag['_huisletter@bag'] = bag['_huisletter@bag'].fillna('None')
-        bag['_huisletter_ligplaats'] = bag['_huisletter_ligplaats'].replace('', 'None')
+        bag['_huisletter_nummeraanduiding'] = bag['_huisletter_nummeraanduiding'].replace('', 'None')
 
         # bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].fillna('None')
-        bag['_openbare_ruimte_naam_verblijfsobject'] = bag['_openbare_ruimte_naam_verblijfsobject'].replace('', 'None')
+        bag['_openbare_ruimte_naam_nummeraanduiding'] = bag['_openbare_ruimte_naam_nummeraanduiding'].replace('', 'None')
 
         # bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].fillna('None')
-        bag['_huisnummer_toevoeging_standplaats'] = bag['_huisnummer_toevoeging_standplaats'].replace('', 'None')
+        bag['_huisnummer_toevoeging_nummeraanduiding'] = bag['_huisnummer_toevoeging_nummeraanduiding'].replace('', 'None')
         return bag
 
 
     def prepare_adres(self, adres):
-        # To lower
-        # adres['sttnaam'] = adres['sttnaam'].str.lower()
-        # adres['hsltr'] = adres['hsltr'].str.lower()
-        # adres['toev'] = adres['toev'].str.lower()
-
         # To int
-        # adres['hsnr'] = adres['hsnr'].fillna(0).astype(int)
         adres['hsnr'] = adres['hsnr'].astype(int)
         adres['hsnr'] = adres['hsnr'].replace(0, -1)
 
-        # Fillna
-        # adres['sttnaam'] = adres['sttnaam'].fillna('None')
-        # adres['hsltr'] = adres['hsltr'].fillna('None')
-        # adres['toev'] = adres['toev'].fillna('None')
         return adres
-
-
-    # def replace_string_nan_bag(bag):
-    #     bag['_huisnummer@bag'] = bag['_huisnummer@bag'].replace(-1, np.nan)
-    #     bag['_huisletter@bag'] = bag['_huisletter@bag'].replace('None', np.nan)
-    #     bag['_openbare_ruimte_naam@bag'] = bag['_openbare_ruimte_naam@bag'].replace('None', np.nan)
-    #     bag['_huisnummer_toevoeging@bag'] = bag['_huisnummer_toevoeging@bag'].replace('None', np.nan)
-    #     return bag
 
 
     def replace_string_nan_adres(self, adres):
@@ -259,12 +234,16 @@ class AdresDataset(MyDataset):
         adres['sttnaam'] = adres['sttnaam'].replace('None', np.nan)
         adres['hsltr'] = adres['hsltr'].replace('None', np.nan)
         adres['toev'] = adres['toev'].replace('None', np.nan)
+        adres['_huisnummer_nummeraanduiding'] = adres['_huisnummer_nummeraanduiding'].replace(-1, np.nan)
+        adres['_huisletter_nummeraanduiding'] = adres['_huisletter_nummeraanduiding'].replace('None', np.nan)
+        adres['_openbare_ruimte_naam_nummeraanduiding'] = adres['_openbare_ruimte_naam_nummeraanduiding'].replace('None', np.nan)
+        adres['_huisnummer_toevoeging_nummeraanduiding'] = adres['_huisnummer_toevoeging_nummeraanduiding'].replace('None', np.nan)
         return adres
 
 
     def match_bwv_bag(self, adres, bag):
         # Merge dataframes on adres dataframe.
-        new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam_verblijfsobject', '_huisnummer_ligplaats'])
+        new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam_nummeraanduiding', '_huisnummer_nummeraanduiding'])
 
         # Find id's that have a direct match and that have multiple matches
         g = new_df.groupby('adres_id')
@@ -272,7 +251,7 @@ class AdresDataset(MyDataset):
         df_multiple = g.filter(lambda x: len(x) > 1)
 
         # Make multiplematch more specific to construct perfect match
-        df_multiple = df_multiple[(df_multiple['hsltr'] == df_multiple['_huisletter_ligplaats']) & (df_multiple['toev'] == df_multiple['_huisnummer_toevoeging_standplaats'])]
+        df_multiple = df_multiple[(df_multiple['hsltr'] == df_multiple['_huisletter_nummeraanduiding']) & (df_multiple['toev'] == df_multiple['_huisnummer_toevoeging_nummeraanduiding'])]
 
         # Concat df_direct and df_multiple
         df_result = pd.concat([df_direct, df_multiple])
@@ -292,7 +271,11 @@ class AdresDataset(MyDataset):
         """Impute values for adresses where no BAG-match could be found."""
         clean_oo.impute_missing_values(adres)
         # clean_oo.impute_missing_values_mode(adres, ['status_coordinaat_code@bag'])
-        adres.fillna(value={'type_woonobject_omschrijving': 'None',
+        adres.fillna(value={'_huisnummer_nummeraanduiding': 0,
+                            '_huisletter_nummeraanduiding': 'None',
+                            '_openbare_ruimte_naam_nummeraanduiding': 'None',
+                            '_huisnummer_toevoeging_nummeraanduiding': 'None',
+                            'type_woonobject_omschrijving': 'None',
                             'eigendomsverhouding_id': 'None',
                             'financieringswijze_id': -1,
                             'gebruik_id': -1,
@@ -597,8 +580,9 @@ class BagDataset(MyDataset):
         # Drop columns
         self.data.drop(columns=['_openbare_ruimte_naam_ligplaats','_openbare_ruimte_naam_standplaats', 'mutatie_gebruiker_nummeraanduiding',
                                 'mutatie_gebruiker_ligplaats', 'mutatie_gebruiker_standplaats', 'mutatie_gebruiker_verblijfsobject',
-                                'huisnummer_nummeraanduiding', '_huisnummer_standplaats', 'huisletter_nummeraanduiding', '_huisletter_standplaats',
-                                '_huisnummer_toevoeging_ligplaats', 'date_modified_ligplaats',
+                                'huisnummer_ligplaats', '_huisnummer_standplaats', 'huisletter_ligplaats', '_huisletter_standplaats',
+                                '_huisnummer_toevoeging_ligplaats', '_huisnummer_toevoeging_standplaats', '_huisnummer_toevoeging_verblijfsobject,
+                                '_huisnummer_verblijfsobject', '_openbare_ruimte_naam_verblijfsobject', 'date_modified_ligplaats',
                                 'date_modified_standplaats', 'date_modified_verblijfsobject'],
                                 inplace=True)
 
