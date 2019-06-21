@@ -581,7 +581,7 @@ class BagDataset(MyDataset):
         self.data.drop(columns=['_openbare_ruimte_naam_ligplaats','_openbare_ruimte_naam_standplaats', 'mutatie_gebruiker_nummeraanduiding',
                                 'mutatie_gebruiker_ligplaats', 'mutatie_gebruiker_standplaats', 'mutatie_gebruiker_verblijfsobject',
                                 'huisnummer_ligplaats', '_huisnummer_standplaats', 'huisletter_ligplaats', '_huisletter_standplaats',
-                                '_huisnummer_toevoeging_ligplaats', '_huisnummer_toevoeging_standplaats', '_huisnummer_toevoeging_verblijfsobject,
+                                '_huisnummer_toevoeging_ligplaats', '_huisnummer_toevoeging_standplaats', '_huisnummer_toevoeging_verblijfsobject',
                                 '_huisnummer_verblijfsobject', '_openbare_ruimte_naam_verblijfsobject', 'date_modified_ligplaats',
                                 'date_modified_standplaats', 'date_modified_verblijfsobject'],
                                 inplace=True)
