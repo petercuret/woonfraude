@@ -1,0 +1,5 @@
+adres_id; wzs_lat; wzs_lon; stadsdeel; categorie; aantal_personen; aantal_achternamen; eigenaar; woonfraude
+1; 52.354050; 4.914220; A; airbnb; 2; 2; stadgenoot; False
+2; 52.373450; 4.861260; A; drugs; 1; 1; eigen haard; True
+3; 52.383450; 4.871260; B; banana hoarding; 1; 1; eigen haard; False
+4; 52.363450; 4.851260; A; drugs; 1; 1; eigen haard; True
