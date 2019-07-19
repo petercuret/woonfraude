@@ -40,9 +40,9 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table as dt
+import dash_table.FormatTemplate as FormatTemplate
 from dash.dependencies import Input, Output, State, ClientsideFunction
 
-import spectra as sp
 import pandas as pd
 import re
 import q
@@ -90,8 +90,14 @@ def filter_df(df, selected_categories, selected_stadsdelen):
     return df_filtered
 
 # Get dictionary of columns for DataTable.
-selected_columns = ['woonfraude', 'adres_id', 'categorie', 'eigenaar']
-table_columns = [{"name": i, "id": i} for i in selected_columns]
+SELECTED_COLUMNS = ['float_test', 'woonfraude', 'adres_id', 'categorie', 'eigenaar']
+TABLE_COLUMNS = [{'name': i, 'id': i} for i in SELECTED_COLUMNS]
+
+# Define styling for the first column (float_test), to reduce the decimals after comma.
+TABLE_COLUMNS[0]['name'] = 'Fraude kans (%)'
+TABLE_COLUMNS[0]['type'] = 'numeric'
+TABLE_COLUMNS[0]['format'] = FormatTemplate.percentage(2)
+print(TABLE_COLUMNS)
 ###############################################################################
 
 
@@ -162,9 +168,9 @@ app.layout = html.Div([
         html.H4('Gefilterde meldingen:'),
         dt.DataTable(
             id='table',
-            columns = table_columns,
+            columns = TABLE_COLUMNS,
             sort_action='native',
-            sort_by=[{'column_id': 'woonfraude', 'direction': 'desc'}],
+            sort_by=[{'column_id': 'float_test', 'direction': 'desc'}],
             # filter_action='native',  # Maybe turn off? A text field to filter feels clunky..
             # row_selectable='multi',
             # selected_rows=[],
@@ -183,6 +189,20 @@ app.layout = html.Div([
                     'if': {
                         'column_id': 'woonfraude',
                         'filter_query': '{woonfraude} eq False'
+                    },
+                    'backgroundColor': colors['no_fraud'],
+                },
+                {
+                    'if': {
+                        'column_id': 'float_test',
+                        'filter_query': '{float_test} ge 0.5'
+                    },
+                    'backgroundColor': colors['fraud'],
+                },
+                {
+                    'if': {
+                        'column_id': 'float_test',
+                        'filter_query': '{float_test} lt 0.5'
                     },
                     'backgroundColor': colors['no_fraud'],
                 },
@@ -346,8 +366,7 @@ def generate_dash_table(intermediate_value):
     df_table.woonfraude = df_table.woonfraude.replace({True: 'True', False: 'False'})
 
     # Only use a selection of the columns.
-    selected_columns = ['woonfraude', 'adres_id', 'categorie', 'eigenaar']
-    df_table = df_table[selected_columns]
+    df_table = df_table[SELECTED_COLUMNS]
 
     # Create a table, with all positive woonfraude examples at the top.
     columns = [{"name": i, "id": i} for i in df_table.columns]
