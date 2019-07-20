@@ -1,5 +1,9 @@
-adres_id; wzs_lat; wzs_lon; stadsdeel; categorie; aantal_personen; aantal_achternamen; eigenaar; woonfraude; float_test
-1; 52.354050; 4.914220; A; airbnb; 2; 2; stadgenoot; False; 0.1123
+adres_id; wzs_lat; wzs_lon; stadsdeel; categorie; aantal_personen; aantal_achternamen; eigenaar; woonfraude; fraude_kans
+1; 52.354050; 4.914220; B; airbnb; 2; 2; stadgenoot; False; 0.1123
 2; 52.373450; 4.861260; A; drugs; 1; 1; eigen haard; True; 0.6432
-3; 52.383450; 4.871260; B; banana hoarding; 1; 1; eigen haard; False; 0.313241
+3; 52.383450; 4.871260; A; banana hoarding; 1; 1; eigen haard; False; 0.313241
 4; 52.363450; 4.851260; A; drugs; 1; 1; eigen haard; True; 0.84321
+5; 52.362059; 4.893454; B; neuzen; 1; 1; de key; True; 0.9864
+6; 52.363959; 4.896454; C; sinaasappels; 1; 1; de key; True; 0.9864
+7; 52.363759; 4.899854; D; bruinkool mijn; 1; 1; de key; True; 0.9864
+8; 52.363259; 4.888454; E; parkietenplaag; 1; 1; de key; True; 0.9864

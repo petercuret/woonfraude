@@ -65,12 +65,13 @@ df = pd.read_csv('mockup_dataset.csv', sep=';', skipinitialspace=True)
 ###############################################################################
 # Define site visuals.
 colors = {'paper': '#DDDDDD',
-          'background': '#FCF2CB',
+          'background': '#F2F2F2',
+          'container_background': '#F9F9F9',
           'text': '#1E4363',
           'marker': '#1E4363',
-          'fraud': 'rgb(175, 0, 0)',
-          'no_fraud': 'rgb(80, 80, 80)',
-          'selected': 'rgb(50, 150, 50)',
+          'fraud': 'rgb(200, 50, 50)',
+          'no_fraud': 'rgb(150, 150, 150)',
+          'selected': 'rgb(75, 75, 75)',
           }
 ###############################################################################
 
@@ -90,140 +91,282 @@ def filter_df(df, selected_categories, selected_stadsdelen):
     return df_filtered
 
 # Get dictionary of columns for DataTable.
-SELECTED_COLUMNS = ['float_test', 'woonfraude', 'adres_id', 'categorie', 'eigenaar']
+SELECTED_COLUMNS = ['fraude_kans', 'woonfraude', 'adres_id', 'categorie', 'eigenaar']
 TABLE_COLUMNS = [{'name': i, 'id': i} for i in SELECTED_COLUMNS]
 
-# Define styling for the first column (float_test), to reduce the decimals after comma.
+# Define styling for the first column (fraude_kans), to reduce the decimals after comma.
 TABLE_COLUMNS[0]['name'] = 'Fraude kans (%)'
 TABLE_COLUMNS[0]['type'] = 'numeric'
 TABLE_COLUMNS[0]['format'] = FormatTemplate.percentage(2)
-print(TABLE_COLUMNS)
 ###############################################################################
 
 
 ###############################################################################
 # Define the dashboard.
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__)
 server = app.server
 app.title = 'Woonfraude Dashboard'
 
-app.layout = html.Div([
+app.layout = html.Div(
+    [
 
-    # Div containing a selection of the data based on dropdown selection.
-    html.Div(id='intermediate_value', style={'display': 'none'}),
+        # Div containing a selection of the data based on dropdown selection.
+        html.Div(id='intermediate_value', style={'display': 'none'}),
 
-    # Divs contain a lists of points which have been selected with on-clicks on the map.
-    html.Div(id='point_selection', style={'display': 'none'}),
+        # Divs contain a lists of points which have been selected with on-clicks on the map.
+        html.Div(id='point_selection', style={'display': 'none'}),
+        html.Div(id='filtered_point_selection', style={'display': 'none'}),
 
-    # Title
-    html.Div([
-        html.Img(src='/assets/house_bw.png', height=50, width=50),
-        dcc.Markdown(
-            '# Woonfraude Dashboard',
-            style={
-                'textAlign': 'center',
-                'color': colors['text']
-            }
-        )
-    ], style={'padding': 2, 'display': 'flex'}),
+        # Header with title.
+        html.Div(
+            [
 
-    # Create map.
-    html.Div(
-        dcc.Graph(
-            id='map',
-            config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
+                # Image
+                html.Div(
+                    [
+                        html.Img(src='/assets/house_bw.png', height=50, width=50),
+                    ],
+                    className='one column',
+                ),
+
+                # Title
+                html.Div(
+                    [
+                        html.H2("Woonfraude Dashboard")
+                    ],
+                    className='eight columns'
+                ),
+
+            ],
+            id='header',
+            className='row',
         ),
-        style={'padding': 2}
-    ),
 
-    # Create drop down filter for categories.
-    html.Div([
-        html.H4('Selecteer categorieën:'),
-        dcc.Dropdown(
-            id='categorie_dropdown',
-            placeholder='Selecteer categorieën',
-            options=[{'label': x, 'value': x} for x in df.categorie.unique()],
-            multi=True,
-            value=df.categorie.unique(),
-            style={'width': '500px'}
+        # Row containing filters, widgets, and map.
+        html.Div(
+            [
+                # Filters div.
+                html.Div(
+                    [
+                        # Create drop down filter for categories.
+                        html.P('Selecteer categorieën:', className="control_label"),
+                        dcc.Dropdown(
+                            id='categorie_dropdown',
+                            placeholder='Selecteer categorieën',
+                            options=[{'label': x, 'value': x} for x in sorted(df.categorie.unique())],
+                            multi=True,
+                            value=df.categorie.unique(),
+                        ),
+
+                        # Create drop down filter for city parts.
+                        html.P('Selecteer stadsdelen:', className="control_label"),
+                        dcc.Dropdown(
+                            id='stadsdeel_dropdown',
+                            placeholder='Selecteer stadsdelen',
+                            options=[{'label': x, 'value': x} for x in sorted(df.stadsdeel.unique())],
+                            multi=True,
+                            value=sorted(df.stadsdeel.unique()),
+                            ),
+
+                        # Show info of items selected on map (using click).
+                        html.Div(
+                            [
+                                html.P('Klik-selectie (adres_id\'s):', className="control_label", style={'padding': 2}),
+                                # html.Ul(id='filtered_point_selection_table', style={'padding': 2})
+                                dt.DataTable(
+                                    id='filtered_point_selection_table',
+                                    columns = TABLE_COLUMNS[1:],
+                                    sort_action='native',
+                                    sort_by=[{'column_id': 'fraude_kans', 'direction': 'desc'}],
+                                    page_action='native',
+                                    page_current=0,
+                                    page_size=20,
+                                    style_data_conditional=[
+                                        {
+                                            'if': {
+                                                'column_id': 'woonfraude',
+                                                'filter_query': '{woonfraude} eq True'
+                                            },
+                                            'backgroundColor': colors['fraud'],
+                                        },
+                                        {
+                                            'if': {
+                                                'column_id': 'woonfraude',
+                                                'filter_query': '{woonfraude} eq False'
+                                            },
+                                            'backgroundColor': colors['no_fraud'],
+                                        },
+                                        {
+                                            'if': {
+                                                'column_id': 'fraude_kans',
+                                                'filter_query': '{fraude_kans} ge 0.5'
+                                            },
+                                            'backgroundColor': colors['fraud'],
+                                        },
+                                        {
+                                            'if': {
+                                                'column_id': 'fraude_kans',
+                                                'filter_query': '{fraude_kans} lt 0.5'
+                                            },
+                                            'backgroundColor': colors['no_fraud'],
+                                        },
+                                    ]
+                                ),
+                            ],
+                        ),
+                    ],
+                    className="pretty_container four columns",
+                    style={'padding': 10}
+                ),
+
+                # Widgets and map div.
+                html.Div(
+                    [
+
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.P("Aantal meldingen"),
+                                        html.H6(
+                                            id="aantal_meldingen",
+                                            className="info_text"
+                                        )
+                                    ],
+                                    id="meldingen",
+                                    className="pretty_container"
+                                ),
+
+                                html.Div(
+                                    [
+                                        html.P("% Fraude verwacht"),
+                                        html.H6(
+                                            id="percentage_fraude_verwacht",
+                                            className="info_text"
+                                        )
+                                    ],
+                                    id="fraude",
+                                    className="pretty_container"
+                                ),
+
+                                html.Div(
+                                    [
+                                        html.P("Stadsdeel split"),
+                                        dcc.Graph(
+                                            id="stadsdeel_split",
+                                            config={'displayModeBar': False},
+                                        )
+                                    ],
+                                    id="stadsdeel",
+                                    className="pretty_container four columns"
+                                ),
+
+                                html.Div(
+                                    [
+                                        html.P("Categorie split"),
+                                        dcc.Graph(
+                                            id="categorie_split",
+                                            config={'displayModeBar': False},
+                                        )
+                                    ],
+                                    id="categorie",
+                                    className="pretty_container four columns"
+                                ),
+
+                                # html.Div(
+                                #     [
+
+                                #     ],
+                                #     id="tripleContainer",
+                                # ),
+                            ],
+                            id="infoContainer",
+                            className="row"
+                        ),
+
+                        html.Div(
+                            dcc.Graph(
+                                id='map',
+                                config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
+                            ),
+                            className="pretty_container twelve columns",
+                        ),
+                    ],
+                    id="rightCol",
+                    className="eight columns"
+                ),
+
+            ],
+            className="row"
         ),
-    ], style={'padding': 2}),
 
-    # Create drop down filter for city parts.
-    html.Div([
-        html.H4('Selecteer stadsdelen:'),
-        dcc.Dropdown(
-            id='stadsdeel_dropdown',
-            placeholder='Selecteer stadsdelen',
-            options=[{'label': x, 'value': x} for x in df.stadsdeel.unique()],
-            multi=True,
-            value=df.stadsdeel.unique(),
-            style={'width': '500px'}
+        # Data table div.
+        html.Div(
+            [
+                html.H4('Gefilterde meldingen'),
+                dt.DataTable(
+                    id='table',
+                    columns = TABLE_COLUMNS,
+                    sort_action='native',
+                    sort_by=[{'column_id': 'fraude_kans', 'direction': 'desc'}],
+                    # filter_action='native',  # Maybe turn off? A text field to filter feels clunky..
+                    # row_selectable='multi',
+                    # selected_rows=[],
+                    page_action='native',
+                    page_current=0,
+                    page_size=20,
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'woonfraude',
+                                'filter_query': '{woonfraude} eq True'
+                            },
+                            'backgroundColor': colors['fraud'],
+                        },
+                        {
+                            'if': {
+                                'column_id': 'woonfraude',
+                                'filter_query': '{woonfraude} eq False'
+                            },
+                            'backgroundColor': colors['no_fraud'],
+                        },
+                        {
+                            'if': {
+                                'column_id': 'fraude_kans',
+                                'filter_query': '{fraude_kans} ge 0.5'
+                            },
+                            'backgroundColor': colors['fraud'],
+                        },
+                        {
+                            'if': {
+                                'column_id': 'fraude_kans',
+                                'filter_query': '{fraude_kans} lt 0.5'
+                            },
+                            'backgroundColor': colors['no_fraud'],
+                        },
+                    ]
+                ),
+            ],
+            className="pretty_container twelve columns",
+            style={'padding': 10}
         ),
-    ], style={'padding': 2}),
 
-    # Show the data in a table.
-    html.Div([
-        html.H4('Gefilterde meldingen:'),
-        dt.DataTable(
-            id='table',
-            columns = TABLE_COLUMNS,
-            sort_action='native',
-            sort_by=[{'column_id': 'float_test', 'direction': 'desc'}],
-            # filter_action='native',  # Maybe turn off? A text field to filter feels clunky..
-            # row_selectable='multi',
-            # selected_rows=[],
-            page_action='native',
-            page_current=0,
-            page_size=20,
-            style_data_conditional=[
-                {
-                    'if': {
-                        'column_id': 'woonfraude',
-                        'filter_query': '{woonfraude} eq True'
-                    },
-                    'backgroundColor': colors['fraud'],
-                },
-                {
-                    'if': {
-                        'column_id': 'woonfraude',
-                        'filter_query': '{woonfraude} eq False'
-                    },
-                    'backgroundColor': colors['no_fraud'],
-                },
-                {
-                    'if': {
-                        'column_id': 'float_test',
-                        'filter_query': '{float_test} ge 0.5'
-                    },
-                    'backgroundColor': colors['fraud'],
-                },
-                {
-                    'if': {
-                        'column_id': 'float_test',
-                        'filter_query': '{float_test} lt 0.5'
-                    },
-                    'backgroundColor': colors['no_fraud'],
-                },
-            ]
-        ),
-    ], style={'padding': 2}),
+        # Show info of items selected on map (using Dash tools like box and lasso).
+        # html.Div([
+        #     html.H4('Selectie op kaart:', style={'padding': 2}),
+        #     html.Ul(id='lasso_map_selection', style={'padding': 2})
+        # ]),
 
-    # Show info of items selected on map (using Dash tools like box and lasso).
-    # html.Div([
-    #     html.H4('Selectie op kaart:', style={'padding': 2}),
-    #     html.Ul(id='lasso_map_selection', style={'padding': 2})
-    # ]),
+    ],
+    id="mainContainer",
+    style={
+        "display": "flex",
+        "flex-direction": "column"
+    }
 
-
-    # Show info of items selected on map (using click).
-    html.Div([
-        html.H4('Klik-selectie (adres_id\'s):', style={'padding': 2}),
-        html.Ul(id='filtered_point_selection', style={'padding': 2})
-    ])
-
-])
+)
 
 
 # Callback function for updating the intermediate data based on the dropdown selection.
@@ -238,6 +381,100 @@ def create_data_selection(selected_categories, selected_stadsdelen):
     return filtered_df.to_json(date_format='iso', orient='split')
 
 
+# Callback function for updating the meldingen statistics block.
+@app.callback(
+    Output('aantal_meldingen', 'children'),
+    [Input('intermediate_value', 'children')]
+)
+def count_items(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
+    return len(df)
+
+
+# Callback function for updating the fraude percentage statistics block.
+@app.callback(
+    Output('percentage_fraude_verwacht', 'children'),
+    [Input('intermediate_value', 'children')]
+)
+def compute_fraud_percentage(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
+
+    # Compute what percentage of cases is expected to be fraudulent. If/else to prevent division by 0.
+    if len(df.woonfraude) > 0:
+        fraude_percentage = len(df.woonfraude[df.woonfraude == True]) / len(df.woonfraude) * 100
+    else:
+        fraude_percentage = 0
+
+    # Return truncated value (better for printing on dashboard)
+    return round(fraude_percentage, 1)
+
+
+# Callback function for updating the stadsdeel split pie chart.
+@app.callback(
+    Output('stadsdeel_split', 'figure'),
+    [Input('intermediate_value', 'children')]
+)
+def make_stadsdeel_pie_chart(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
+
+    # Create value counts per stadsdeel.
+    stadsdeel_value_counts = df.stadsdeel.value_counts().sort_index()
+
+    figure={
+        'data': [
+            go.Pie(
+                labels=stadsdeel_value_counts.index,
+                values=stadsdeel_value_counts.values
+            )
+        ],
+        'layout': go.Layout(
+            height=300,
+            margin=go.layout.Margin(l=0, r=0, b=100, t=0, pad=0),
+            showlegend=True,
+            legend=dict(orientation='h', font={'size':10}),
+            paper_bgcolor=colors['container_background'],
+        )
+    }
+    return figure
+
+
+# Callback function for updating the categorie split pie chart.
+@app.callback(
+    Output('categorie_split', 'figure'),
+    [Input('intermediate_value', 'children')]
+)
+def make_categorie_pie_chart(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
+
+    # Create value counts per categorie.
+    categorie_value_counts = df.categorie.value_counts().sort_index()
+
+    figure={
+        'data': [
+            go.Pie(
+                labels=categorie_value_counts.index,
+                values=categorie_value_counts.values
+            )
+        ],
+        'layout': go.Layout(
+            height=300,
+            margin=go.layout.Margin(l=0, r=0, b=100, t=0, pad=0),
+            showlegend=True,
+            legend=dict(orientation='h', x=0, y=0, font={'size':10}),
+            paper_bgcolor=colors['container_background'],
+        )
+    }
+    return figure
+
+
 # Callback function for filling the map based on the dropdown-selections.
 @app.callback(
     Output('map', 'figure'),
@@ -249,18 +486,6 @@ def plot_map(intermediate_value, point_selection, map_state):
 
     # Define which input triggers the callback (map.figure or intermediate_value.children).
     trigger_event = dash.callback_context.triggered[0]['prop_id']
-
-    # center=dict(
-    #     lat=52.36,
-    #     lon=4.89
-    # )
-    # zoom=11
-
-    # if map_state != None:
-    #     center = map_state['layout']['mapbox']['center']
-    #     print(center)
-    #     zoom = map_state['layout']['mapbox']['zoom']
-    #     print(zoom)
 
     # Load the pre-filtered version of the dataframe.
     df_map = pd.read_json(intermediate_value, orient='split')
@@ -294,7 +519,7 @@ def plot_map(intermediate_value, point_selection, map_state):
                 text=sel_text,
                 mode='markers',
                 marker=dict(
-                    size=20,
+                    size=17,
                     color=colors['selected'],
                 ),
             ),
@@ -329,9 +554,9 @@ def plot_map(intermediate_value, point_selection, map_state):
             uirevision='never',
             autosize=True,
             hovermode='closest',
-            width=800,
-            height=600,
-            margin=go.layout.Margin(l=0, r=0, b=0, t=25, pad=0),
+            # width=800,
+            # height=600,
+            margin=go.layout.Margin(l=0, r=0, b=0, t=0, pad=0),
             showlegend=False,  # Set to False, since legend selection breaks custom point selection.
             legend=dict(orientation='h'),
             plot_bgcolor=colors['background'],
@@ -356,8 +581,7 @@ def plot_map(intermediate_value, point_selection, map_state):
     Output('table', 'data'),
     [Input('intermediate_value', 'children')]
 )
-# def plot_map(selected_categories, selected_stadsdelen):
-def generate_dash_table(intermediate_value):
+def generate_filtered_table(intermediate_value):
 
     # Load the pre-filtered version of the dataframe.
     df_table = pd.read_json(intermediate_value, orient='split')
@@ -449,11 +673,43 @@ def show_selected(existing_point_selection, intermediate_value):
         if point_id not in point_ids_list:
             point_selection.remove(point_id)
 
-    return str(point_selection)
+    return point_selection
 
+
+@app.callback(
+    Output('filtered_point_selection_table', 'data'),
+    [Input('intermediate_value', 'children'),
+    Input('filtered_point_selection', 'children')]
+)
+def generate_filtered_point_selection_table(intermediate_value, filtered_point_selection):
+
+    # First check if any points have been selected.
+    if filtered_point_selection == []:
+        return []
+    else:
+        # Turn list of point_ids into a list of numbers instead of strings
+        point_selection = [int(x) for x in filtered_point_selection]
+
+        # Load the pre-filtered version of the dataframe.
+        df = pd.read_json(intermediate_value, orient='split')
+
+        # Reduce the dataframe using the point selection
+        df = df[df.adres_id.isin(point_selection)]
+
+        # Transform True and False boolean values to strings.
+        df.woonfraude = df.woonfraude.replace({True: 'True', False: 'False'})
+
+        # Only use a selection of the columns.
+        df = df[SELECTED_COLUMNS]
+
+        # Create a table, with all positive woonfraude examples at the top.
+        columns = [{"name": i, "id": i} for i in df.columns]
+        data = df.to_dict('records')
+        print(data)
+        return data
 
 ###############################################################################
 # Run dashboard when calling this script.
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, threaded=True)
 ###############################################################################
