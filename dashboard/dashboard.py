@@ -177,7 +177,7 @@ app.layout = html.Div(
                                 # html.Ul(id='filtered_point_selection_table', style={'padding': 2})
                                 dt.DataTable(
                                     id='filtered_point_selection_table',
-                                    columns = TABLE_COLUMNS[1:],
+                                    columns = TABLE_COLUMNS[1:-1],
                                     sort_action='native',
                                     sort_by=[{'column_id': 'fraude_kans', 'direction': 'desc'}],
                                     page_action='native',
@@ -307,7 +307,7 @@ app.layout = html.Div(
             [
                 html.H4('Gefilterde meldingen'),
                 dt.DataTable(
-                    id='table',
+                    id='filtered_table',
                     columns = TABLE_COLUMNS,
                     sort_action='native',
                     sort_by=[{'column_id': 'fraude_kans', 'direction': 'desc'}],
@@ -369,7 +369,7 @@ app.layout = html.Div(
 )
 
 
-# Callback function for updating the intermediate data based on the dropdown selection.
+# Updates the intermediate data based on the dropdown selection.
 @app.callback(
     Output('intermediate_value', 'children'),
     [Input('categorie_dropdown', 'value'),
@@ -381,7 +381,7 @@ def create_data_selection(selected_categories, selected_stadsdelen):
     return filtered_df.to_json(date_format='iso', orient='split')
 
 
-# Callback function for updating the meldingen statistics block.
+# Updates the meldingen statistics widget.
 @app.callback(
     Output('aantal_meldingen', 'children'),
     [Input('intermediate_value', 'children')]
@@ -393,7 +393,7 @@ def count_items(intermediate_value):
     return len(df)
 
 
-# Callback function for updating the fraude percentage statistics block.
+# Updates the fraude percentage statistics widget.
 @app.callback(
     Output('percentage_fraude_verwacht', 'children'),
     [Input('intermediate_value', 'children')]
@@ -413,7 +413,7 @@ def compute_fraud_percentage(intermediate_value):
     return round(fraude_percentage, 1)
 
 
-# Callback function for updating the stadsdeel split pie chart.
+# Updates the stadsdeel split pie chart.
 @app.callback(
     Output('stadsdeel_split', 'figure'),
     [Input('intermediate_value', 'children')]
@@ -444,7 +444,7 @@ def make_stadsdeel_pie_chart(intermediate_value):
     return figure
 
 
-# Callback function for updating the categorie split pie chart.
+# Updates the categorie split pie chart.
 @app.callback(
     Output('categorie_split', 'figure'),
     [Input('intermediate_value', 'children')]
@@ -475,7 +475,7 @@ def make_categorie_pie_chart(intermediate_value):
     return figure
 
 
-# Callback function for filling the map based on the dropdown-selections.
+# Updates the map based on dropdown-selections.
 @app.callback(
     Output('map', 'figure'),
     [Input('intermediate_value', 'children'),
@@ -576,9 +576,9 @@ def plot_map(intermediate_value, point_selection, map_state):
     return figure
 
 
-# Callback function filling the data table based on the dropdown-selections.
+# Updates the table showing all data points after dropdown-selections.
 @app.callback(
-    Output('table', 'data'),
+    Output('filtered_table', 'data'),
     [Input('intermediate_value', 'children')]
 )
 def generate_filtered_table(intermediate_value):
@@ -599,20 +599,7 @@ def generate_filtered_table(intermediate_value):
     return data
 
 
-# Callback function for creating a map selection summarization.
-# @app.callback(
-#     Output('lasso_map_selection', 'children'),
-#     [Input('map', 'selectedData')]
-# )
-# def summarize_map_selection(selectedData):
-#     # # Functionality to print the hover text of the map-selected data points.
-#     hover_text = [html.Li("Nog geen selectie gemaakt. Maak een selectie.")]
-#     if selectedData != None:
-#         hover_text = [html.Li(x['text']) for x in selectedData['points']]
-#     return hover_text
-
-
-# Callback function for selecting map points using click-events.
+# Enable the slection of map points using click-events.
 @app.callback(
     Output('point_selection', 'children'),
     [Input('map', 'clickData'),
@@ -623,7 +610,7 @@ def update_point_selection_on_click(clickData, intermediate_value, existing_poin
     """
     Update point selection with newly selected points, or according to dropdown filters.
 
-    The input "intermediate_value:children" is only used to update the
+    The input "intermediate_value:children" is only used to activate a callback.
     """
 
     # Define which input triggers the callback (map.clickData or intermediate_value.children).
@@ -643,18 +630,10 @@ def update_point_selection_on_click(clickData, intermediate_value, existing_poin
             else:
                 point_selection.append(point_id)
 
-    # Remove any previously selected points, if the dropdown selections rule them out.
-    # if trigger_event == 'intermediate_value.children':
-    #     df = pd.read_json(intermediate_value, orient='split') # Load the pre-filtered version of the dataframe.
-    #     point_ids_list = [str(x) for x in list(df.adres_id)]
-    #     for point_id in point_selection:
-    #         if point_id not in point_ids_list:
-    #             point_selection.remove(point_id)
-
     return point_selection
 
 
-# Show list of click-selected points.
+# Create a filtered version of the point_selection, based on the categorie and stadsdeel filters.
 @app.callback(
     Output('filtered_point_selection', 'children'),
     [Input('point_selection', 'children'),
@@ -676,6 +655,7 @@ def show_selected(existing_point_selection, intermediate_value):
     return point_selection
 
 
+# Updates the table showing a list of the selected & filtered points.
 @app.callback(
     Output('filtered_point_selection_table', 'data'),
     [Input('intermediate_value', 'children'),
