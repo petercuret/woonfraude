@@ -685,7 +685,6 @@ def generate_filtered_point_selection_table(intermediate_value, filtered_point_s
         # Create a table, with all positive woonfraude examples at the top.
         columns = [{"name": i, "id": i} for i in df.columns]
         data = df.to_dict('records')
-        print(data)
         return data
 
 ###############################################################################
