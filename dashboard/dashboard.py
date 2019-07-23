@@ -26,6 +26,19 @@
 # TODO #
 ########
 #
+# - 4 blokjes bovenin allemaal vullen met nummers / statistieken inv pie charts
+# - Pie charts verplaatsen naar de rij onderin, naast de tabel met gefilterde meldingen
+# - Deze volledige rij ergens de titel "Statistieken gefilterde meldingen" geven
+# - Mock data -> verrijken met daadwerkelijke straatnamen
+# - Mock data -> daadwerkelijke stadsdeel namen gebruiken
+# - Mock data -> daadwerkelijke categorie namen neerzetten
+#
+#
+# - Nieuwe feature: pro-actief handhaven
+#    - Mock data csv maken voor suggested addressen voor controle
+#    - Aparte tab of toggle knop o.i.d. maken voor het bekijken van deze data
+#
+#
 # - Eigen legenda bouwen (ingebouwde legenda breekt eigen custom point selection functionality)
 # - Deploy code on VAO.
 # - Check RandomForestRegressor confidence precision:
@@ -124,24 +137,25 @@ app.layout = html.Div(
             [
 
                 # Image
-                html.Div(
-                    [
-                        html.Img(src='/assets/house_bw.png', height=50, width=50),
-                    ],
-                    className='one column',
-                ),
+                # html.Div(
+                #     [
+                #         html.Img(src='/assets/house_bw_translucent.png', height=50, width=50),
+                #     ],
+                #     className='one column',
+                # ),
 
                 # Title
                 html.Div(
                     [
-                        html.H2("Woonfraude Dashboard")
+                        html.H1("Woonfraude Dashboard")
                     ],
-                    className='eight columns'
+                    className='twelve columns'
                 ),
 
             ],
             id='header',
             className='row',
+            style={'textAlign': 'center'}
         ),
 
         # Row containing filters, widgets, and map.
@@ -150,6 +164,7 @@ app.layout = html.Div(
                 # Filters div.
                 html.Div(
                     [
+
                         # Create drop down filter for categories.
                         html.P('Selecteer categorieën:', className="control_label"),
                         dcc.Dropdown(
@@ -173,7 +188,7 @@ app.layout = html.Div(
                         # Show info of items selected on map (using click).
                         html.Div(
                             [
-                                html.P('Klik-selectie (adres_id\'s):', className="control_label", style={'padding': 2}),
+                                html.P('Geselecteerde adressen:', className="control_label", style={'padding': 2}),
                                 # html.Ul(id='filtered_point_selection_table', style={'padding': 2})
                                 dt.DataTable(
                                     id='filtered_point_selection_table',
