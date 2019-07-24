@@ -26,18 +26,9 @@
 # TODO #
 ########
 #
-# - 4 blokjes bovenin allemaal vullen met nummers / statistieken inv pie charts
-# - Pie charts verplaatsen naar de rij onderin, naast de tabel met gefilterde meldingen
-# - Deze volledige rij ergens de titel "Statistieken gefilterde meldingen" geven
-# - Mock data -> verrijken met daadwerkelijke straatnamen
-# - Mock data -> daadwerkelijke stadsdeel namen gebruiken
-# - Mock data -> daadwerkelijke categorie namen neerzetten
-#
-#
 # - Nieuwe feature: pro-actief handhaven
 #    - Mock data csv maken voor suggested addressen voor controle
 #    - Aparte tab of toggle knop o.i.d. maken voor het bekijken van deze data
-#
 #
 # - Eigen legenda bouwen (ingebouwde legenda breekt eigen custom point selection functionality)
 # - Deploy code on VAO.
@@ -61,7 +52,6 @@ import re
 import q
 from copy import deepcopy
 
-import plotly.plotly as py
 import plotly.graph_objs as go
 
 # Import own modules.
@@ -158,7 +148,7 @@ app.layout = html.Div(
             style={'textAlign': 'center'}
         ),
 
-        # Row containing filters, widgets, and map.
+        # Row containing filters, info boxes, and map.
         html.Div(
             [
                 # Filters div.
@@ -188,8 +178,7 @@ app.layout = html.Div(
                         # Show info of items selected on map (using click).
                         html.Div(
                             [
-                                html.P('Geselecteerde adressen:', className="control_label", style={'padding': 2}),
-                                # html.Ul(id='filtered_point_selection_table', style={'padding': 2})
+                                html.P('Geselecteerde adressen:', className="control_label"),
                                 dt.DataTable(
                                     id='filtered_point_selection_table',
                                     columns = TABLE_COLUMNS[1:-1],
@@ -232,8 +221,8 @@ app.layout = html.Div(
                             ],
                         ),
                     ],
+                    id='leftCol',
                     className="pretty_container four columns",
-                    style={'padding': 10}
                 ),
 
                 # Widgets and map div.
@@ -242,6 +231,8 @@ app.layout = html.Div(
 
                         html.Div(
                             [
+
+                                # Aantal meldingen (info box).
                                 html.Div(
                                     [
                                         html.P("Aantal meldingen"),
@@ -250,10 +241,10 @@ app.layout = html.Div(
                                             className="info_text"
                                         )
                                     ],
-                                    id="meldingen",
                                     className="pretty_container"
                                 ),
 
+                                # Percentage fraude verwacht (info box).
                                 html.Div(
                                     [
                                         html.P("% Fraude verwacht"),
@@ -262,40 +253,35 @@ app.layout = html.Div(
                                             className="info_text"
                                         )
                                     ],
-                                    id="fraude",
                                     className="pretty_container"
                                 ),
 
+                                # Aantal geselecteerde meldingen (info box).
                                 html.Div(
                                     [
-                                        html.P("Stadsdeel split"),
-                                        dcc.Graph(
-                                            id="stadsdeel_split",
-                                            config={'displayModeBar': False},
+                                        html.P("Aantal geselecteerde meldingen"),
+                                        html.H6(
+                                            id="aantal_geselecteerde_meldingen",
+                                            className="info_text"
                                         )
                                     ],
-                                    id="stadsdeel",
-                                    className="pretty_container four columns"
+                                    className="pretty_container",
+                                    style={'backgroundColor': '#F7D7D7'}
                                 ),
 
+                                # Percentage fraude verwacht bij geselecteerde meldingen (info box).
                                 html.Div(
                                     [
-                                        html.P("Categorie split"),
-                                        dcc.Graph(
-                                            id="categorie_split",
-                                            config={'displayModeBar': False},
+                                        html.P("% Fraude verwacht bij geselecteerde meldingen"),
+                                        html.H6(
+                                            id="percentage_fraude_verwacht_geselecteerd",
+                                            className="info_text"
                                         )
                                     ],
-                                    id="categorie",
-                                    className="pretty_container four columns"
+                                    className="pretty_container",
+                                    style={'backgroundColor': '#F7D7D7'}
                                 ),
 
-                                # html.Div(
-                                #     [
-
-                                #     ],
-                                #     id="tripleContainer",
-                                # ),
                             ],
                             id="infoContainer",
                             className="row"
@@ -306,7 +292,8 @@ app.layout = html.Div(
                                 id='map',
                                 config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
                             ),
-                            className="pretty_container twelve columns",
+                            className="pretty_container",
+                            # style={'height': 500}
                         ),
                     ],
                     id="rightCol",
@@ -314,65 +301,92 @@ app.layout = html.Div(
                 ),
 
             ],
-            className="row"
+            className="row",
         ),
 
         # Data table div.
         html.Div(
             [
-                html.H4('Gefilterde meldingen'),
-                dt.DataTable(
-                    id='filtered_table',
-                    columns = TABLE_COLUMNS,
-                    sort_action='native',
-                    sort_by=[{'column_id': 'fraude_kans', 'direction': 'desc'}],
-                    # filter_action='native',  # Maybe turn off? A text field to filter feels clunky..
-                    # row_selectable='multi',
-                    # selected_rows=[],
-                    page_action='native',
-                    page_current=0,
-                    page_size=20,
-                    style_data_conditional=[
-                        {
-                            'if': {
-                                'column_id': 'woonfraude',
-                                'filter_query': '{woonfraude} eq True'
-                            },
-                            'backgroundColor': colors['fraud'],
-                        },
-                        {
-                            'if': {
-                                'column_id': 'woonfraude',
-                                'filter_query': '{woonfraude} eq False'
-                            },
-                            'backgroundColor': colors['no_fraud'],
-                        },
-                        {
-                            'if': {
-                                'column_id': 'fraude_kans',
-                                'filter_query': '{fraude_kans} ge 0.5'
-                            },
-                            'backgroundColor': colors['fraud'],
-                        },
-                        {
-                            'if': {
-                                'column_id': 'fraude_kans',
-                                'filter_query': '{fraude_kans} lt 0.5'
-                            },
-                            'backgroundColor': colors['no_fraud'],
-                        },
-                    ]
-                ),
-            ],
-            className="pretty_container twelve columns",
-            style={'padding': 10}
-        ),
+                # Filtered entries data table.
+                html.Div(
+                    [
+                        html.P('Gefilterde meldingen'),
+                        dt.DataTable(
+                            id='filtered_table',
+                            columns = TABLE_COLUMNS,
+                            sort_action='native',
+                            sort_by=[{'column_id': 'fraude_kans', 'direction': 'desc'}],
+                            # filter_action='native',  # Maybe turn off? A text field to filter feels clunky..
+                            # row_selectable='multi',
+                            # selected_rows=[],
+                            page_action='native',
+                            page_current=0,
+                            page_size=20,
+                            style_data_conditional=[
+                                {
+                                    'if': {
+                                        'column_id': 'woonfraude',
+                                        'filter_query': '{woonfraude} eq True'
+                                    },
+                                    'backgroundColor': colors['fraud'],
+                                },
+                                {
+                                    'if': {
+                                        'column_id': 'woonfraude',
+                                        'filter_query': '{woonfraude} eq False'
+                                    },
+                                    'backgroundColor': colors['no_fraud'],
+                                },
+                                {
+                                    'if': {
+                                        'column_id': 'fraude_kans',
+                                        'filter_query': '{fraude_kans} ge 0.5'
+                                    },
+                                    'backgroundColor': colors['fraud'],
+                                },
+                                {
+                                    'if': {
+                                        'column_id': 'fraude_kans',
+                                        'filter_query': '{fraude_kans} lt 0.5'
+                                    },
+                                    'backgroundColor': colors['no_fraud'],
+                                }
+                            ]
+                        ),
 
-        # Show info of items selected on map (using Dash tools like box and lasso).
-        # html.Div([
-        #     html.H4('Selectie op kaart:', style={'padding': 2}),
-        #     html.Ul(id='lasso_map_selection', style={'padding': 2})
-        # ]),
+                    ],
+                    className="pretty_container eight columns",
+                ),
+
+                # Filtered entries stadsdeel split (pie chart).
+                html.Div(
+                    [
+                        html.P("Gefilterde meldingen - Stadsdeel split"),
+                        dcc.Graph(
+                            id="stadsdeel_split",
+                            config={'displayModeBar': False},
+                        )
+                    ],
+                    id="stadsdeel",
+                    className="pretty_container two columns"
+                ),
+
+                # Filtered entries categorie split (pie chart).
+                html.Div(
+                    [
+                        html.P("Gefilterde meldingen - Categorie split"),
+                        dcc.Graph(
+                            id="categorie_split",
+                            config={'displayModeBar': False},
+                        )
+                    ],
+                    id="categorie",
+                    className="pretty_container two columns"
+                ),
+
+            ],
+            className="row"
+        ),
 
     ],
     id="mainContainer",
@@ -396,19 +410,18 @@ def create_data_selection(selected_categories, selected_stadsdelen):
     return filtered_df.to_json(date_format='iso', orient='split')
 
 
-# Updates the meldingen statistics widget.
+# Updates the aantal_meldingen info box.
 @app.callback(
     Output('aantal_meldingen', 'children'),
     [Input('intermediate_value', 'children')]
 )
 def count_items(intermediate_value):
-
     # Load the pre-filtered version of the dataframe.
     df = pd.read_json(intermediate_value, orient='split')
     return len(df)
 
 
-# Updates the fraude percentage statistics widget.
+# Updates the percentage_fraude_verwacht info box.
 @app.callback(
     Output('percentage_fraude_verwacht', 'children'),
     [Input('intermediate_value', 'children')]
@@ -428,66 +441,38 @@ def compute_fraud_percentage(intermediate_value):
     return round(fraude_percentage, 1)
 
 
-# Updates the stadsdeel split pie chart.
+# Updates the aantal_geselecteerde_meldingen info box.
 @app.callback(
-    Output('stadsdeel_split', 'figure'),
-    [Input('intermediate_value', 'children')]
+    Output('aantal_geselecteerde_meldingen', 'children'),
+    [Input('filtered_point_selection', 'children')]
 )
-def make_stadsdeel_pie_chart(intermediate_value):
+def count_items_selected(filtered_point_selection):
+    # Just return the amount of filtered selected points.
+    return len(filtered_point_selection)
+
+
+# Updates the percentage_fraude_verwacht_geselecteerd info box.
+@app.callback(
+    Output('percentage_fraude_verwacht_geselecteerd', 'children'),
+    [Input('intermediate_value', 'children'),
+    Input('filtered_point_selection', 'children')]
+)
+def compute_fraud_percentage_selected(intermediate_value, filtered_point_selection):
 
     # Load the pre-filtered version of the dataframe.
     df = pd.read_json(intermediate_value, orient='split')
 
-    # Create value counts per stadsdeel.
-    stadsdeel_value_counts = df.stadsdeel.value_counts().sort_index()
+    # Reduce the dataframe using the point selection.
+    df = df[df.adres_id.isin(filtered_point_selection)]
 
-    figure={
-        'data': [
-            go.Pie(
-                labels=stadsdeel_value_counts.index,
-                values=stadsdeel_value_counts.values
-            )
-        ],
-        'layout': go.Layout(
-            height=300,
-            margin=go.layout.Margin(l=0, r=0, b=100, t=0, pad=0),
-            showlegend=True,
-            legend=dict(orientation='h', font={'size':10}),
-            paper_bgcolor=colors['container_background'],
-        )
-    }
-    return figure
+    # Compute what percentage of cases is expected to be fraudulent. If/else to prevent division by 0.
+    if len(df.woonfraude) > 0:
+        fraude_percentage = len(df.woonfraude[df.woonfraude == True]) / len(df.woonfraude) * 100
+    else:
+        fraude_percentage = 0
 
-
-# Updates the categorie split pie chart.
-@app.callback(
-    Output('categorie_split', 'figure'),
-    [Input('intermediate_value', 'children')]
-)
-def make_categorie_pie_chart(intermediate_value):
-
-    # Load the pre-filtered version of the dataframe.
-    df = pd.read_json(intermediate_value, orient='split')
-
-    # Create value counts per categorie.
-    categorie_value_counts = df.categorie.value_counts().sort_index()
-
-    figure={
-        'data': [
-            go.Pie(
-                labels=categorie_value_counts.index,
-                values=categorie_value_counts.values
-            )
-        ],
-        'layout': go.Layout(
-            height=300,
-            margin=go.layout.Margin(l=0, r=0, b=100, t=0, pad=0),
-            showlegend=True,
-            legend=dict(orientation='h', x=0, y=0, font={'size':10}),
-            paper_bgcolor=colors['container_background'],
-        )
-    }
-    return figure
+    # Return truncated value (better for printing on dashboard)
+    return round(fraude_percentage, 1)
 
 
 # Updates the map based on dropdown-selections.
@@ -569,8 +554,8 @@ def plot_map(intermediate_value, point_selection, map_state):
             uirevision='never',
             autosize=True,
             hovermode='closest',
-            # width=800,
-            # height=600,
+            # width=1000,
+            # height=500,
             margin=go.layout.Margin(l=0, r=0, b=0, t=0, pad=0),
             showlegend=False,  # Set to False, since legend selection breaks custom point selection.
             legend=dict(orientation='h'),
@@ -688,7 +673,7 @@ def generate_filtered_point_selection_table(intermediate_value, filtered_point_s
         # Load the pre-filtered version of the dataframe.
         df = pd.read_json(intermediate_value, orient='split')
 
-        # Reduce the dataframe using the point selection
+        # Reduce the dataframe using the point selection.
         df = df[df.adres_id.isin(point_selection)]
 
         # Transform True and False boolean values to strings.
@@ -701,6 +686,178 @@ def generate_filtered_point_selection_table(intermediate_value, filtered_point_s
         columns = [{"name": i, "id": i} for i in df.columns]
         data = df.to_dict('records')
         return data
+
+
+# Updates the stadsdeel split PIE chart.
+@app.callback(
+    Output('stadsdeel_split', 'figure'),
+    [Input('intermediate_value', 'children')]
+)
+def make_stadsdeel_pie_chart(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
+
+    # Create value counts per stadsdeel.
+    stadsdeel_value_counts = df.stadsdeel.value_counts().sort_index()
+
+    figure={
+        'data': [
+            go.Pie(
+                labels=stadsdeel_value_counts.index,
+                values=stadsdeel_value_counts.values
+            )
+        ],
+        'layout': go.Layout(
+            height=300,
+            margin=go.layout.Margin(l=0, r=0, b=100, t=0, pad=0),
+            showlegend=True,
+            legend=dict(orientation='h', font={'size':10}),
+            paper_bgcolor=colors['container_background'],
+        )
+    }
+    return figure
+
+
+# Updates the categorie split pie chart.
+@app.callback(
+    Output('categorie_split', 'figure'),
+    [Input('intermediate_value', 'children')]
+)
+def make_categorie_pie_chart(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
+
+    # Create value counts per categorie.
+    categorie_value_counts = df.categorie.value_counts().sort_index()
+
+    figure={
+        'data': [
+            go.Pie(
+                labels=categorie_value_counts.index,
+                values=categorie_value_counts.values
+            )
+        ],
+        'layout': go.Layout(
+            height=300,
+            margin=go.layout.Margin(l=0, r=0, b=100, t=0, pad=0),
+            showlegend=True,
+            legend=dict(orientation='h', x=0, y=0, font={'size':10}),
+            paper_bgcolor=colors['container_background'],
+        )
+    }
+    return figure
+
+
+# # Updates the stadsdeel split BAR chart.
+# @app.callback(
+#     Output('stadsdeel_split', 'figure'),
+#     [Input('intermediate_value', 'children')]
+# )
+# def make_stadsdeel_split_bar_chart(intermediate_value):
+
+#     # Load the pre-filtered version of the dataframe.
+#     df = pd.read_json(intermediate_value, orient='split')
+
+#     # Create value counts per stadsdeel.
+#     stadsdeel_value_counts = df.stadsdeel.value_counts(ascending=True)
+#     x=stadsdeel_value_counts.values
+#     y=stadsdeel_value_counts.index
+#     percentages = [(val/sum(x))*100 for val in x]
+
+#     # Create annotations for showing the percentages on top of the bars.
+#     annotations = []
+#     for num, p in enumerate(percentages):
+#         annotation = dict(xref='x1',
+#                           yref='y1',
+#                           x=0.5,
+#                           y=num,
+#                           text=f"{p}%",
+#                           showarrow=False,
+#                           align='left'
+#                       )
+#         annotations.append(annotation)
+
+#     figure={
+#         'data': [
+#             go.Bar(
+#                 y=y,
+#                 x=x,
+#                 text=percentages,
+#                 marker=dict(
+#                     color='rgba(50, 171, 96, 0.6)',
+#                     line=dict(
+#                         color='rgba(50, 171, 96, 1.0)',
+#                         width=2),
+#                 ),
+#                 showlegend=False,
+#                 orientation='h'
+#             )
+#         ],
+#         'layout': go.Layout(
+#             height=200,
+#             margin=go.layout.Margin(l=100, r=0, b=0, t=0, pad=0),
+#             paper_bgcolor=colors['container_background'],
+#             annotations=annotations
+#         )
+#     }
+#     return figure
+
+
+# # Updates the categorie split BAR chart.
+# @app.callback(
+#     Output('categorie_split', 'figure'),
+#     [Input('intermediate_value', 'children')]
+# )
+# def make_stadsdeel_split_bar_chart(intermediate_value):
+
+#     # Load the pre-filtered version of the dataframe.
+#     df = pd.read_json(intermediate_value, orient='split')
+
+#     # Create value counts per categorie.
+#     stadsdeel_value_counts = df.categorie.value_counts(ascending=True)
+#     x=stadsdeel_value_counts.values
+#     y=stadsdeel_value_counts.index
+#     percentages = [(val/sum(x))*100 for val in x]
+
+#     # Create annotations for showing the percentages on top of the bars.
+#     annotations = []
+#     for num, p in enumerate(percentages):
+#         annotation = dict(xref='x1',
+#                           yref='y1',
+#                           x=0.5,
+#                           y=num,
+#                           text=f"{p}%",
+#                           showarrow=False,
+#                           align='left'
+#                       )
+#         annotations.append(annotation)
+
+#     figure={
+#         'data': [
+#             go.Bar(
+#                 y=y,
+#                 x=x,
+#                 text=percentages,
+#                 marker=dict(
+#                     color='rgba(50, 171, 96, 0.6)',
+#                     line=dict(
+#                         color='rgba(50, 171, 96, 1.0)',
+#                         width=2),
+#                 ),
+#                 showlegend=False,
+#                 orientation='h'
+#             )
+#         ],
+#         'layout': go.Layout(
+#             height=200,
+#             margin=go.layout.Margin(l=100, r=0, b=0, t=0, pad=0),
+#             paper_bgcolor=colors['container_background'],
+#             annotations=annotations
+#         )
+#     }
+#     return figure
 
 ###############################################################################
 # Run dashboard when calling this script.
