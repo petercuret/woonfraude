@@ -10,3 +10,4 @@ Is woonfraude te voorspellen met data?
 * Is op basis van een melding de kans op woonfraude te voorspellen?
 * Is te achterhalen welke zaken uit meldingen voortkomen, en welke niet?
 * Is dit te doen met een (aan handhavers) uitlegbaar algoritme?
+* Hoe zijn de resultaten te visualiseren voor de handhavers?
