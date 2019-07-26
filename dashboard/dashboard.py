@@ -48,6 +48,8 @@ import dash_table.FormatTemplate as FormatTemplate
 from dash.dependencies import Input, Output, State, ClientsideFunction
 
 import pandas as pd
+import urllib
+import json
 import re
 import q
 from copy import deepcopy
@@ -113,7 +115,7 @@ app = dash.Dash(__name__)
 server = app.server
 app.title = 'Woonfraude Dashboard'
 
-# Defines the meldingen tab
+# Defines the meldingen tab.
 meldingen_tab = html.Div(
     [
 
@@ -222,6 +224,16 @@ meldingen_tab = html.Div(
                                 ),
                             ],
                         ),
+
+                        # Link to download csv with all selected addresses.
+                        html.A(
+                            'Download lijst geselecteerde adressen (CSV)',
+                            id='download_selected_addresses_list',
+                            download="geselecteerde_adressen.csv",
+                            href="",
+                            target="_blank",
+                        ),
+
                     ],
                     id='leftCol',
                     className="pretty_container four columns",
@@ -289,6 +301,7 @@ meldingen_tab = html.Div(
                             className="row"
                         ),
 
+                        # Map with selectable points.
                         html.Div(
                             dcc.Graph(
                                 id='map',
@@ -400,6 +413,7 @@ meldingen_tab = html.Div(
 )
 
 
+# Defines the proactief tab.
 proactief_tab = html.Div(
     [
         html.Div(id='none',children=[],style={'display': 'none'}),  # For creating a map_proactief callback function with an empty input.
@@ -638,7 +652,7 @@ def generate_filtered_table(intermediate_value):
     return data
 
 
-# Enable the slection of map points using click-events.
+# Enable the selection of map points using click-events.
 @app.callback(
     Output('point_selection', 'children'),
     [Input('map', 'clickData'),
@@ -725,6 +739,25 @@ def generate_filtered_point_selection_table(intermediate_value, filtered_point_s
         columns = [{"name": i, "id": i} for i in df.columns]
         data = df.to_dict('records')
         return data
+
+
+# Creates a download link for the filtered_point_selection_table data.
+@app.callback(
+    Output('download_selected_addresses_list', 'href'),
+    [Input('filtered_point_selection_table', 'data')])
+def update_download_link(filtered_point_selection_table):
+    """Updates the csv download link with the data in the filtered point selection table."""
+    if filtered_point_selection_table == []:
+        point_selection = []
+    else:
+        # Turn list of point_ids into a list of numbers instead of strings
+        point_selection = filtered_point_selection_table
+
+    # Convert to df, then to csv string, then return for downloading.
+    df = pd.DataFrame(point_selection)
+    csv_string = df.to_csv(index=False, encoding='utf-8', sep=';')
+    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+    return csv_string
 
 
 # Updates the stadsdeel split PIE chart.
