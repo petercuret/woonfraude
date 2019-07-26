@@ -741,6 +741,10 @@ def generate_filtered_point_selection_table(intermediate_value, filtered_point_s
         return data
 
 
+# TODO: CHANGE WHEN THE DOWNLOAD LINK IS UPDATED WITH NEW DATA.
+#       NOW THIS CODE BELOW IS RAN EVERY TIME A POINT IS (DE)SELECTED,
+#       THIS IS TERRIBLY INEFFICIENT. ACCEPTABLE FOR THE MVP, BUT SHOULD BE CHANGED.
+
 # Creates a download link for the filtered_point_selection_table data.
 @app.callback(
     Output('download_selected_addresses_list', 'href'),
