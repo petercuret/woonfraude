@@ -1,0 +1,4 @@
+adres_id; wzs_lat; wzs_lon; stadsdeel; categorie; sttnaam; hsnr; toev; hsltr; aantal_personen; aantal_achternamen; eigenaar; woonfraude; fraude_kans
+1; 52.373450; 4.861260; West; drugs; Joos de Moorstraat; 35; 2; B; 1; 1; eigen haard; True; 0.6432
+2; 52.363450; 4.851260; West; drugs; Postjeskade; 8; 1; D; 1; 1; eigen haard; True; 0.84321
+3; 52.363759; 4.899854; Centrum Oost; uitkeringsfraude; Keizersgracht; 709; 4; A; 1; 1; de key; True; 0.9864

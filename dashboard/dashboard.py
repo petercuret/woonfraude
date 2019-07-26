@@ -62,6 +62,7 @@ import config
 ###############################################################################
 # Load mock-up data for prototyping purposes.
 df = pd.read_csv('mockup_dataset.csv', sep=';', skipinitialspace=True)
+df_proactief = pd.read_csv('mockup_dataset_proactief.csv', sep=';', skipinitialspace=True)
 ###############################################################################
 
 
@@ -112,7 +113,8 @@ app = dash.Dash(__name__)
 server = app.server
 app.title = 'Woonfraude Dashboard'
 
-app.layout = html.Div(
+# Defines the meldingen tab
+meldingen_tab = html.Div(
     [
 
         # Div containing a selection of the data based on dropdown selection.
@@ -134,13 +136,13 @@ app.layout = html.Div(
                 #     className='one column',
                 # ),
 
-                # Title
-                html.Div(
-                    [
-                        html.H1("Woonfraude Dashboard")
-                    ],
-                    className='twelve columns'
-                ),
+                # # Title
+                # html.Div(
+                #     [
+                #         html.H1("Woonfraude Dashboard")
+                #     ],
+                #     className='twelve columns'
+                # ),
 
             ],
             id='header',
@@ -396,6 +398,43 @@ app.layout = html.Div(
     }
 
 )
+
+
+proactief_tab = html.Div(
+    [
+        html.Div(id='none',children=[],style={'display': 'none'}),  # For creating a map_proactief callback function with an empty input.
+
+        # Div containing a selection of the data based on dropdown selection.
+        html.Div(id='intermediate_value_proactief', style={'display': 'none'}),
+
+        html.Div(
+            dcc.Graph(
+                id='map_proactief',
+                config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
+            ),
+            className="pretty_container",
+        ),
+    ],
+    style={
+        "display": "flex",
+        "flex-direction": "column"
+    }
+)
+
+
+# Combines the two tabs into a single app.
+app.layout = html.Div([
+
+    # Title
+    html.H1("Woonfraude Dashboard", style={'textAlign': 'center'}),
+
+    # Tabs for meldingen & proactieve handhaving.
+    dcc.Tabs(id='tabs', value='meldingen_tab', children=[
+        dcc.Tab(label='Meldingen', value='meldingen_tab', children=[meldingen_tab]),
+        dcc.Tab(label='Proactieve handhaving', value='proactief_tab', children=[proactief_tab]),
+    ])
+])
+
 
 
 # Updates the intermediate data based on the dropdown selection.
@@ -858,6 +897,118 @@ def make_categorie_pie_chart(intermediate_value):
 #         )
 #     }
 #     return figure
+
+
+
+###############################################################################
+# Proactief tab functies #
+###########################
+
+@app.callback(
+    Output('intermediate_value_proactief', 'children'),
+    [Input('none', 'children')]
+)
+def create_data_selection(_):
+    return df_proactief.to_json(date_format='iso', orient='split')
+
+
+@app.callback(
+    Output('map_proactief', 'figure'),
+    [Input('intermediate_value_proactief', 'children')]
+)
+def plot_map(intermediate_value_proactief):
+
+    # Define which input triggers the callback (map.figure or intermediate_value_proactief.children).
+    # trigger_event = dash.callback_context.triggered[0]['prop_id']
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value_proactief, orient='split')
+
+    # Select positive and negative samples for plotting.
+    pos = df[df.woonfraude==True]
+    neg = df[df.woonfraude==False]
+
+    # Create a df of the selected points, for highlighting.
+    # selected_point_ids = [int(x) for x in point_selection]
+    # sel = df_map.loc[df_map.adres_id.isin(selected_point_ids)]
+
+    # Create texts for when hovering the mouse over items.
+    def make_hover_string(row):
+        return f"Adres id: {row.adres_id}\
+                 <br>Categorie: {row.categorie}\
+                 <br>Aantal inwoners: {row.aantal_personen}\
+                 <br>Aantal achternamen: {row.aantal_achternamen}\
+                 <br>Eigenaar: {row.eigenaar}"
+    pos_text = pos.apply(make_hover_string, axis=1)
+    neg_text = neg.apply(make_hover_string, axis=1)
+    # sel_text = sel.apply(make_hover_string, axis=1)
+
+    figure={
+        'data': [
+            # Plot border for selected samples (plot first, so its behind the pos/neg samples).
+            # go.Scattermapbox(
+            #     name='Geselecteerd',
+            #     lat=sel['wzs_lat'],
+            #     lon=sel['wzs_lon'],
+            #     text=sel_text,
+            #     mode='markers',
+            #     marker=dict(
+            #         size=17,
+            #         color=colors['selected'],
+            #     ),
+            # ),
+            # Plot positive samples.
+            go.Scattermapbox(
+                name='Woonfraude verwacht',
+                lat=pos['wzs_lat'],
+                lon=pos['wzs_lon'],
+                text=pos_text,
+                hoverinfo='text',
+                mode='markers',
+                marker=dict(
+                    size=12,
+                    color=colors['fraud'],
+                ),
+            ),
+            # Plot negative samples.
+            go.Scattermapbox(
+                name='Geen woonfraude verwacht',
+                lat=neg['wzs_lat'],
+                lon=neg['wzs_lon'],
+                text=neg_text,
+                hoverinfo='text',
+                mode='markers',
+                marker=dict(
+                    size=12,
+                    color=colors['no_fraud'],
+                ),
+            ),
+        ],
+        'layout': go.Layout(
+            uirevision='never',
+            autosize=True,
+            hovermode='closest',
+            # width=1000,
+            # height=500,
+            margin=go.layout.Margin(l=0, r=0, b=0, t=0, pad=0),
+            showlegend=False,  # Set to False, since legend selection breaks custom point selection.
+            legend=dict(orientation='h'),
+            plot_bgcolor=colors['background'],
+            paper_bgcolor=colors['paper'],
+            mapbox=dict(
+                accesstoken=config.mapbox_access_token,
+                style="light",
+                center=dict(
+                    lat=52.36,
+                    lon=4.89
+                ),
+                zoom=11,
+            ),
+        )
+    }
+
+    return figure
+
 
 ###############################################################################
 # Run dashboard when calling this script.
