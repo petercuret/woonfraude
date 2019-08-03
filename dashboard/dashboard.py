@@ -97,7 +97,7 @@ def filter_df(df, selected_categories, selected_stadsdelen):
     return df_filtered
 
 # Get dictionary of columns for DataTable.
-SELECTED_COLUMNS = ['fraude_kans', 'woonfraude', 'adres_id', 'categorie', 'eigenaar']
+SELECTED_COLUMNS = ['fraude_kans', 'woonfraude', 'adres_id', 'stadsdeel', 'categorie', 'eigenaar']
 TABLE_COLUMNS = [{'name': i, 'id': i} for i in SELECTED_COLUMNS]
 
 # Define styling for the first column (fraude_kans), to reduce the decimals after comma.
@@ -826,115 +826,116 @@ def make_categorie_pie_chart(intermediate_value):
     return figure
 
 
-# # Updates the stadsdeel split BAR chart.
-# @app.callback(
-#     Output('stadsdeel_split', 'figure'),
-#     [Input('intermediate_value', 'children')]
-# )
-# def make_stadsdeel_split_bar_chart(intermediate_value):
+'''
+# Updates the stadsdeel split BAR chart.
+@app.callback(
+    Output('stadsdeel_split', 'figure'),
+    [Input('intermediate_value', 'children')]
+)
+def make_stadsdeel_split_bar_chart(intermediate_value):
 
-#     # Load the pre-filtered version of the dataframe.
-#     df = pd.read_json(intermediate_value, orient='split')
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
 
-#     # Create value counts per stadsdeel.
-#     stadsdeel_value_counts = df.stadsdeel.value_counts(ascending=True)
-#     x=stadsdeel_value_counts.values
-#     y=stadsdeel_value_counts.index
-#     percentages = [(val/sum(x))*100 for val in x]
+    # Create value counts per stadsdeel.
+    stadsdeel_value_counts = df.stadsdeel.value_counts(ascending=True)
+    x=stadsdeel_value_counts.values
+    y=stadsdeel_value_counts.index
+    percentages = [(val/sum(x))*100 for val in x]
 
-#     # Create annotations for showing the percentages on top of the bars.
-#     annotations = []
-#     for num, p in enumerate(percentages):
-#         annotation = dict(xref='x1',
-#                           yref='y1',
-#                           x=0.5,
-#                           y=num,
-#                           text=f"{p}%",
-#                           showarrow=False,
-#                           align='left'
-#                       )
-#         annotations.append(annotation)
+    # Create annotations for showing the percentages on top of the bars.
+    annotations = []
+    for num, p in enumerate(percentages):
+        annotation = dict(xref='x1',
+                          yref='y1',
+                          x=0.5,
+                          y=num,
+                          text=f"{p}%",
+                          showarrow=False,
+                          align='left'
+                      )
+        annotations.append(annotation)
 
-#     figure={
-#         'data': [
-#             go.Bar(
-#                 y=y,
-#                 x=x,
-#                 text=percentages,
-#                 marker=dict(
-#                     color='rgba(50, 171, 96, 0.6)',
-#                     line=dict(
-#                         color='rgba(50, 171, 96, 1.0)',
-#                         width=2),
-#                 ),
-#                 showlegend=False,
-#                 orientation='h'
-#             )
-#         ],
-#         'layout': go.Layout(
-#             height=200,
-#             margin=go.layout.Margin(l=100, r=0, b=0, t=0, pad=0),
-#             paper_bgcolor=colors['container_background'],
-#             annotations=annotations
-#         )
-#     }
-#     return figure
+    figure={
+        'data': [
+            go.Bar(
+                y=y,
+                x=x,
+                text=percentages,
+                marker=dict(
+                    color='rgba(50, 171, 96, 0.6)',
+                    line=dict(
+                        color='rgba(50, 171, 96, 1.0)',
+                        width=2),
+                ),
+                showlegend=False,
+                orientation='h'
+            )
+        ],
+        'layout': go.Layout(
+            height=200,
+            margin=go.layout.Margin(l=100, r=0, b=0, t=0, pad=0),
+            paper_bgcolor=colors['container_background'],
+            annotations=annotations
+        )
+    }
+    return figure
 
 
-# # Updates the categorie split BAR chart.
-# @app.callback(
-#     Output('categorie_split', 'figure'),
-#     [Input('intermediate_value', 'children')]
-# )
-# def make_stadsdeel_split_bar_chart(intermediate_value):
+# Updates the categorie split BAR chart.
+@app.callback(
+    Output('categorie_split', 'figure'),
+    [Input('intermediate_value', 'children')]
+)
+def make_stadsdeel_split_bar_chart(intermediate_value):
 
-#     # Load the pre-filtered version of the dataframe.
-#     df = pd.read_json(intermediate_value, orient='split')
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
 
-#     # Create value counts per categorie.
-#     stadsdeel_value_counts = df.categorie.value_counts(ascending=True)
-#     x=stadsdeel_value_counts.values
-#     y=stadsdeel_value_counts.index
-#     percentages = [(val/sum(x))*100 for val in x]
+    # Create value counts per categorie.
+    stadsdeel_value_counts = df.categorie.value_counts(ascending=True)
+    x=stadsdeel_value_counts.values
+    y=stadsdeel_value_counts.index
+    percentages = [(val/sum(x))*100 for val in x]
 
-#     # Create annotations for showing the percentages on top of the bars.
-#     annotations = []
-#     for num, p in enumerate(percentages):
-#         annotation = dict(xref='x1',
-#                           yref='y1',
-#                           x=0.5,
-#                           y=num,
-#                           text=f"{p}%",
-#                           showarrow=False,
-#                           align='left'
-#                       )
-#         annotations.append(annotation)
+    # Create annotations for showing the percentages on top of the bars.
+    annotations = []
+    for num, p in enumerate(percentages):
+        annotation = dict(xref='x1',
+                          yref='y1',
+                          x=0.5,
+                          y=num,
+                          text=f"{p}%",
+                          showarrow=False,
+                          align='left'
+                      )
+        annotations.append(annotation)
 
-#     figure={
-#         'data': [
-#             go.Bar(
-#                 y=y,
-#                 x=x,
-#                 text=percentages,
-#                 marker=dict(
-#                     color='rgba(50, 171, 96, 0.6)',
-#                     line=dict(
-#                         color='rgba(50, 171, 96, 1.0)',
-#                         width=2),
-#                 ),
-#                 showlegend=False,
-#                 orientation='h'
-#             )
-#         ],
-#         'layout': go.Layout(
-#             height=200,
-#             margin=go.layout.Margin(l=100, r=0, b=0, t=0, pad=0),
-#             paper_bgcolor=colors['container_background'],
-#             annotations=annotations
-#         )
-#     }
-#     return figure
-
+    figure={
+        'data': [
+            go.Bar(
+                y=y,
+                x=x,
+                text=percentages,
+                marker=dict(
+                    color='rgba(50, 171, 96, 0.6)',
+                    line=dict(
+                        color='rgba(50, 171, 96, 1.0)',
+                        width=2),
+                ),
+                showlegend=False,
+                orientation='h'
+            )
+        ],
+        'layout': go.Layout(
+            height=200,
+            margin=go.layout.Margin(l=100, r=0, b=0, t=0, pad=0),
+            paper_bgcolor=colors['container_background'],
+            annotations=annotations
+        )
+    }
+    return figure
+'''
 
 
 ###############################################################################
