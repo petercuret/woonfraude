@@ -26,10 +26,6 @@
 # TODO #
 ########
 #
-# - Nieuwe feature: pro-actief handhaven
-#    - Mock data csv maken voor suggested addressen voor controle
-#    - Aparte tab of toggle knop o.i.d. maken voor het bekijken van deze data
-#
 # - Eigen legenda bouwen (ingebouwde legenda breekt eigen custom point selection functionality)
 # - Deploy code on VAO.
 # - Check RandomForestRegressor confidence precision:
@@ -243,63 +239,65 @@ meldingen_tab = html.Div(
                 html.Div(
                     [
 
-                        html.Div(
-                            [
+                        # # Row with 4 statistics widgets
+                        # html.Div(
+                        #     [
 
-                                # Aantal meldingen (info box).
-                                html.Div(
-                                    [
-                                        html.P("Aantal meldingen"),
-                                        html.H6(
-                                            id="aantal_meldingen",
-                                            className="info_text"
-                                        )
-                                    ],
-                                    className="pretty_container"
-                                ),
+                        #         # Aantal meldingen (info box).
+                        #         html.Div(
+                        #             [
+                        #                 html.P("Aantal meldingen"),
+                        #                 html.H6(
+                        #                     id="aantal_meldingen",
+                        #                     className="info_text"
+                        #                 )
+                        #             ],
+                        #             className="pretty_container"
+                        #         ),
 
-                                # Percentage fraude verwacht (info box).
-                                html.Div(
-                                    [
-                                        html.P("% Fraude verwacht"),
-                                        html.H6(
-                                            id="percentage_fraude_verwacht",
-                                            className="info_text"
-                                        )
-                                    ],
-                                    className="pretty_container"
-                                ),
+                        #         # Percentage fraude verwacht (info box).
+                        #         html.Div(
+                        #             [
+                        #                 html.P("% Fraude verwacht"),
+                        #                 html.H6(
+                        #                     id="percentage_fraude_verwacht",
+                        #                     className="info_text"
+                        #                 )
+                        #             ],
+                        #             className="pretty_container"
+                        #         ),
 
-                                # Aantal geselecteerde meldingen (info box).
-                                html.Div(
-                                    [
-                                        html.P("Aantal geselecteerde meldingen"),
-                                        html.H6(
-                                            id="aantal_geselecteerde_meldingen",
-                                            className="info_text"
-                                        )
-                                    ],
-                                    className="pretty_container",
-                                    style={'backgroundColor': '#F7D7D7'}
-                                ),
+                        #         # Aantal geselecteerde meldingen (info box).
+                        #         html.Div(
+                        #             [
+                        #                 html.P("Aantal geselecteerde meldingen"),
+                        #                 html.H6(
+                        #                     id="aantal_geselecteerde_meldingen",
+                        #                     className="info_text"
+                        #                 )
+                        #             ],
+                        #             className="pretty_container",
+                        #             style={'backgroundColor': '#F7D7D7'}
+                        #         ),
 
-                                # Percentage fraude verwacht bij geselecteerde meldingen (info box).
-                                html.Div(
-                                    [
-                                        html.P("% Fraude verwacht bij geselecteerde meldingen"),
-                                        html.H6(
-                                            id="percentage_fraude_verwacht_geselecteerd",
-                                            className="info_text"
-                                        )
-                                    ],
-                                    className="pretty_container",
-                                    style={'backgroundColor': '#F7D7D7'}
-                                ),
+                        #         # Percentage fraude verwacht bij geselecteerde meldingen (info box).
+                        #         html.Div(
+                        #             [
+                        #                 html.P("% Fraude verwacht bij geselecteerde meldingen"),
+                        #                 html.H6(
+                        #                     id="percentage_fraude_verwacht_geselecteerd",
+                        #                     className="info_text"
+                        #                 )
+                        #             ],
+                        #             className="pretty_container",
+                        #             style={'backgroundColor': '#F7D7D7'}
+                        #         ),
 
-                            ],
-                            id="infoContainer",
-                            className="row"
-                        ),
+                        #     ],
+                        #     id="infoContainer",
+                        #     className="row"
+                        # ),
+
 
                         # Map with selectable points.
                         html.Div(
@@ -416,9 +414,10 @@ meldingen_tab = html.Div(
 # Defines the proactief tab.
 proactief_tab = html.Div(
     [
-        html.Div(id='none',children=[],style={'display': 'none'}),  # For creating a map_proactief callback function with an empty input.
+        # For creating a map_proactief callback function with an empty input.
+        html.Div(id='none_proactief',children=[],style={'display': 'none'}),
 
-        # Div containing a selection of the data based on dropdown selection.
+        # Div for containing a selection of the data based on filters.
         html.Div(id='intermediate_value_proactief', style={'display': 'none'}),
 
         html.Div(
@@ -436,6 +435,31 @@ proactief_tab = html.Div(
 )
 
 
+# Defines the unsupervised tab.
+unsupervised_tab = html.Div(
+    [
+        # For creating a map_unsupervised callback function with an empty input.
+        html.Div(id='none_unsupervised',children=[],style={'display': 'none'}),
+
+        # Div for containing a selection of the data based on filters.
+        html.Div(id='intermediate_value_unsupervised', style={'display': 'none'}),
+
+        html.Div(
+            dcc.Graph(
+                id='map_unsupervised',
+                config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
+            ),
+            className="pretty_container",
+        ),
+    ],
+    style={
+        "display": "flex",
+        "flex-direction": "column"
+    }
+)
+
+
+
 # Combines the two tabs into a single app.
 app.layout = html.Div([
 
@@ -446,6 +470,7 @@ app.layout = html.Div([
     dcc.Tabs(id='tabs', value='meldingen_tab', children=[
         dcc.Tab(label='Meldingen', value='meldingen_tab', children=[meldingen_tab]),
         dcc.Tab(label='Proactieve handhaving', value='proactief_tab', children=[proactief_tab]),
+        dcc.Tab(label='Unsupervised', value='unsupervised_tab', children=[unsupervised_tab]),
     ])
 ])
 
@@ -462,7 +487,7 @@ def create_data_selection(selected_categories, selected_stadsdelen):
     filtered_df = filter_df(df, selected_categories, selected_stadsdelen)
     return filtered_df.to_json(date_format='iso', orient='split')
 
-
+'''
 # Updates the aantal_meldingen info box.
 @app.callback(
     Output('aantal_meldingen', 'children'),
@@ -526,7 +551,7 @@ def compute_fraud_percentage_selected(intermediate_value, filtered_point_selecti
 
     # Return truncated value (better for printing on dashboard)
     return round(fraude_percentage, 1)
-
+'''
 
 # Updates the map based on dropdown-selections.
 @app.callback(
@@ -608,7 +633,7 @@ def plot_map(intermediate_value, point_selection, map_state):
             autosize=True,
             hovermode='closest',
             # width=1000,
-            # height=500,
+            height=700,
             margin=go.layout.Margin(l=0, r=0, b=0, t=0, pad=0),
             showlegend=False,  # Set to False, since legend selection breaks custom point selection.
             legend=dict(orientation='h'),
@@ -944,7 +969,7 @@ def make_stadsdeel_split_bar_chart(intermediate_value):
 
 @app.callback(
     Output('intermediate_value_proactief', 'children'),
-    [Input('none', 'children')]
+    [Input('none_proactief', 'children')]
 )
 def create_data_selection(_):
     return df_proactief.to_json(date_format='iso', orient='split')
@@ -956,19 +981,12 @@ def create_data_selection(_):
 )
 def plot_map(intermediate_value_proactief):
 
-    # Define which input triggers the callback (map.figure or intermediate_value_proactief.children).
-    # trigger_event = dash.callback_context.triggered[0]['prop_id']
-
     # Load the pre-filtered version of the dataframe.
     df = pd.read_json(intermediate_value_proactief, orient='split')
 
     # Select positive and negative samples for plotting.
     pos = df[df.woonfraude==True]
     neg = df[df.woonfraude==False]
-
-    # Create a df of the selected points, for highlighting.
-    # selected_point_ids = [int(x) for x in point_selection]
-    # sel = df_map.loc[df_map.adres_id.isin(selected_point_ids)]
 
     # Create texts for when hovering the mouse over items.
     def make_hover_string(row):
@@ -979,22 +997,9 @@ def plot_map(intermediate_value_proactief):
                  <br>Eigenaar: {row.eigenaar}"
     pos_text = pos.apply(make_hover_string, axis=1)
     neg_text = neg.apply(make_hover_string, axis=1)
-    # sel_text = sel.apply(make_hover_string, axis=1)
 
     figure={
         'data': [
-            # Plot border for selected samples (plot first, so its behind the pos/neg samples).
-            # go.Scattermapbox(
-            #     name='Geselecteerd',
-            #     lat=sel['wzs_lat'],
-            #     lon=sel['wzs_lon'],
-            #     text=sel_text,
-            #     mode='markers',
-            #     marker=dict(
-            #         size=17,
-            #         color=colors['selected'],
-            #     ),
-            # ),
             # Plot positive samples.
             go.Scattermapbox(
                 name='Woonfraude verwacht',
@@ -1027,7 +1032,97 @@ def plot_map(intermediate_value_proactief):
             autosize=True,
             hovermode='closest',
             # width=1000,
-            # height=500,
+            height=700,
+            margin=go.layout.Margin(l=0, r=0, b=0, t=0, pad=0),
+            showlegend=False,  # Set to False, since legend selection breaks custom point selection.
+            legend=dict(orientation='h'),
+            plot_bgcolor=colors['background'],
+            paper_bgcolor=colors['paper'],
+            mapbox=dict(
+                accesstoken=config.mapbox_access_token,
+                style="light",
+                center=dict(
+                    lat=52.36,
+                    lon=4.89
+                ),
+                zoom=11,
+            ),
+        )
+    }
+
+    return figure
+
+
+###############################################################################
+# Unsupervised tab functies #
+#############################
+
+@app.callback(
+    Output('intermediate_value_unsupervised', 'children'),
+    [Input('none_unsupervised', 'children')]
+)
+def create_data_selection(_):
+    return df_proactief.to_json(date_format='iso', orient='split')
+
+
+@app.callback(
+    Output('map_unsupervised', 'figure'),
+    [Input('intermediate_value_unsupervised', 'children')]
+)
+def plot_map(intermediate_value_unsupervised):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value_unsupervised, orient='split')
+
+    # Select positive and negative samples for plotting.
+    pos = df[df.woonfraude==True]
+    neg = df[df.woonfraude==False]
+
+    # Create texts for when hovering the mouse over items.
+    def make_hover_string(row):
+        return f"Adres id: {row.adres_id}\
+                 <br>Categorie: {row.categorie}\
+                 <br>Aantal inwoners: {row.aantal_personen}\
+                 <br>Aantal achternamen: {row.aantal_achternamen}\
+                 <br>Eigenaar: {row.eigenaar}"
+    pos_text = pos.apply(make_hover_string, axis=1)
+    neg_text = neg.apply(make_hover_string, axis=1)
+
+    figure={
+        'data': [
+            # Plot positive samples.
+            go.Scattermapbox(
+                name='Woonfraude verwacht',
+                lat=pos['wzs_lat'],
+                lon=pos['wzs_lon'],
+                text=pos_text,
+                hoverinfo='text',
+                mode='markers',
+                marker=dict(
+                    size=12,
+                    color=colors['fraud'],
+                ),
+            ),
+            # Plot negative samples.
+            go.Scattermapbox(
+                name='Geen woonfraude verwacht',
+                lat=neg['wzs_lat'],
+                lon=neg['wzs_lon'],
+                text=neg_text,
+                hoverinfo='text',
+                mode='markers',
+                marker=dict(
+                    size=12,
+                    color=colors['no_fraud'],
+                ),
+            ),
+        ],
+        'layout': go.Layout(
+            uirevision='never',
+            autosize=True,
+            hovermode='closest',
+            # width=1000,
+            height=700,
             margin=go.layout.Margin(l=0, r=0, b=0, t=0, pad=0),
             showlegend=False,  # Set to False, since legend selection breaks custom point selection.
             legend=dict(orientation='h'),
