@@ -61,6 +61,7 @@ import config
 # Load mock-up data for prototyping purposes.
 df = pd.read_csv('mockup_dataset.csv', sep=';', skipinitialspace=True)
 df_proactief = pd.read_csv('mockup_dataset_proactief.csv', sep=';', skipinitialspace=True)
+df_unsupervised = pd.read_csv('mockup_dataset_unsupervised.csv', sep=';', skipinitialspace=True)
 ###############################################################################
 
 
@@ -1062,7 +1063,7 @@ def plot_map(intermediate_value_proactief):
     [Input('none_unsupervised', 'children')]
 )
 def create_data_selection(_):
-    return df_proactief.to_json(date_format='iso', orient='split')
+    return df_unsupervised.to_json(date_format='iso', orient='split')
 
 
 @app.callback(
