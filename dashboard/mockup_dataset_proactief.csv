@@ -1,5 +1,5 @@
-adres_id; wzs_lat; wzs_lon; stadsdeel; categorie; sttnaam; hsnr; toev; hsltr; aantal_personen; aantal_achternamen; eigenaar; woonfraude; fraude_kans
-1; 52.354050; 4.914220; Oost; airbnb; Vrolikstraat; 169; 1; A; 2; 2; stadgenoot; False; 0.1123
-2; 52.362059; 4.893454; Centrum; woningdelen; Prinsengracht; 604; 2; E; 1; 1; de key; True; 0.9864
-3; 52.363959; 4.896454; Centrum Oost; leegstand; Reguliersgracht; 39; 1; G; 1; 1; de key; True; 0.9864
-4; 52.363259; 4.888454; Centrum; in gebruik zonder huisvestigingsvergunning; Kerkstraat; 5; 1; C; 1; 1; de key; True; 0.9864
+adres_id; wzs_lat; wzs_lon; stadsdeel; categorie; sttnaam; hsnr; toev; hsltr; aantal_personen; aantal_achternamen; eigenaar; woonfraude; fraude_kans; aantal_meldingen; is_hotline; m2_per_persoon; gebruikersdoel; aantal_volwassenen; profiel
+1; 52.354050; 4.914220; Oost; airbnb; Vrolikstraat; 169; 1; A; 2; 2; stadgenoot; False; 0.1123; 0; False; 52; bedrijfsfunctie; 1; veelverhuizers
+2; 52.362059; 4.893454; Centrum; woningdelen; Prinsengracht; 604; 2; E; 1; 1; de key; True; 0.9864; 2; True; 13; woonfunctie; 2; leegstand
+3; 52.363959; 4.896454; Centrum Oost; leegstand; Reguliersgracht; 39; 1; G; 1; 1; de key; True; 0.9864; 1; False; 24; woonfunctie; 5; veelverhuizers
+4; 52.363259; 4.888454; Centrum; in gebruik zonder huisvestigingsvergunning; Kerkstraat; 5; 1; C; 1; 1; de key; True; 0.9864; 4; False; 19; woonfunctie; 1; veelverhuizers

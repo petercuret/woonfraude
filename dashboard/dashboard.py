@@ -80,18 +80,9 @@ colors = {'paper': '#DDDDDD',
 
 
 ###############################################################################
-# Helper functions.
-def filter_df(df, selected_categories, selected_stadsdelen):
-    # Create a copy of the original dataframe.
-    df_filtered = deepcopy(df)
-
-    # Filter the original dataframe by selected categories.
-    df_filtered = df_filtered[df_filtered.categorie.isin(selected_categories)]
-
-    # Filter the dataframe by selected stadsdelen.
-    df_filtered = df_filtered[df_filtered.stadsdeel.isin(selected_stadsdelen)]
-
-    return df_filtered
+#############################
+# Set some global variables #
+#############################
 
 # Get dictionary of columns for DataTable.
 SELECTED_COLUMNS = ['fraude_kans', 'woonfraude', 'adres_id', 'stadsdeel', 'categorie', 'eigenaar']
@@ -122,32 +113,6 @@ meldingen_tab = html.Div(
         # Divs contain a lists of points which have been selected with on-clicks on the map.
         html.Div(id='point_selection', style={'display': 'none'}),
         html.Div(id='filtered_point_selection', style={'display': 'none'}),
-
-        # Header with title.
-        html.Div(
-            [
-
-                # Image
-                # html.Div(
-                #     [
-                #         html.Img(src='/assets/house_bw_translucent.png', height=50, width=50),
-                #     ],
-                #     className='one column',
-                # ),
-
-                # # Title
-                # html.Div(
-                #     [
-                #         html.H1("Woonfraude Dashboard")
-                #     ],
-                #     className='twelve columns'
-                # ),
-
-            ],
-            id='header',
-            className='row',
-            style={'textAlign': 'center'}
-        ),
 
         # Row containing filters, info boxes, and map.
         html.Div(
@@ -421,13 +386,202 @@ proactief_tab = html.Div(
         # Div for containing a selection of the data based on filters.
         html.Div(id='intermediate_value_proactief', style={'display': 'none'}),
 
+        # Row containing filters, info boxes, and map.
         html.Div(
-            dcc.Graph(
-                id='map_proactief',
-                config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
-            ),
-            className="pretty_container",
+            [
+                # Filters div.
+                html.Div(
+                    [
+
+                        # Create range slider for number of meldingen.
+                        html.P('Minimaal aantal meldingen op adres:', className="control_label"),
+                        dcc.RangeSlider(
+                            id='aantal_meldingen_rangeslider_proactief',
+                            min=min(df_proactief.aantal_meldingen),
+                            max=max(df_proactief.aantal_meldingen),
+                            marks={i: f"{i}" for i in range(min(df_proactief.aantal_meldingen), max(df_proactief.aantal_meldingen)+1)},
+                            value=[min(df_proactief.aantal_meldingen), max(df_proactief.aantal_meldingen)]
+                        ),
+
+                        # Padding (temporary hack)
+                        html.P(' '),
+
+                        # Create slider for number of adults.
+                        html.P('Aantal volwassenen', className="control_label"),
+                        dcc.RangeSlider(
+                            id='aantal_volwassenen_rangeslider_proactief',
+                            min=min(df_proactief.aantal_volwassenen),
+                            max=max(df_proactief.aantal_volwassenen),
+                            marks={i: f"{i}" for i in range(min(df_proactief.aantal_volwassenen), max(df_proactief.aantal_volwassenen)+1)},
+                            value=[min(df_proactief.aantal_volwassenen), max(df_proactief.aantal_volwassenen)]
+                        ),
+
+                        # Padding (temporary hack)
+                        html.P(' '),
+
+                        # Create m2 per person slider.
+                        html.P('Aantal m2 per persoon:', className="control_label"),
+                        dcc.RangeSlider(
+                            id='aantal_m2_per_persoon_rangeslider_proactief',
+                            min=min(df_proactief.m2_per_persoon),
+                            max=max(df_proactief.m2_per_persoon),
+                            marks={i: f"{i}" for i in range(min(df_proactief.m2_per_persoon), max(df_proactief.m2_per_persoon)+1, 3)},
+                            value=[min(df_proactief.m2_per_persoon), max(df_proactief.m2_per_persoon)]
+                        ),
+
+                        # Padding (temporary hack)
+                        html.P(' '),
+
+                        # Create drop down filter for city parts.
+                        html.P('Selecteer stadsdelen:', className="control_label"),
+                        dcc.Dropdown(
+                            id='stadsdeel_dropdown_proactief',
+                            placeholder='Selecteer stadsdelen',
+                            options=[{'label': x, 'value': x} for x in sorted(df_proactief.stadsdeel.unique())],
+                            multi=True,
+                            value=sorted(df_proactief.stadsdeel.unique()),
+                        ),
+
+                        # Create hotline dropdown.
+                        html.P('Is hotline melding:', className="control_label"),
+                        dcc.Dropdown(
+                            id='hotline_dropdown_proactief',
+                            placeholder='Selecteer waarden',
+                            options=[{'label': 'Ja', 'value': 'True'}, {'label': 'Nee', 'value': 'False'}],
+                            multi=True,
+                            value=['True', 'False']
+                        ),
+
+                        # Create gebruikersdoel dropdown.
+                        html.P('Selecteer gebruikersdoel:', className="control_label"),
+                        dcc.Dropdown(
+                            id='gebruikersdoel_dropdown_proactief',
+                            placeholder='Selecteer gebruikersdoel',
+                            options=[{'label': x, 'value': x} for x in sorted(df_proactief.gebruikersdoel.unique())],
+                            multi=True,
+                            value=sorted(df_proactief.gebruikersdoel.unique()),
+                        ),
+
+                        # Create profiel dropdown.
+                        html.P('Selecteer profiel:', className="control_label"),
+                        dcc.Dropdown(
+                            id='profiel_dropdown_proactief',
+                            placeholder='Selecteer profiel',
+                            options=[{'label': x, 'value': x} for x in sorted(df_proactief.profiel.unique())],
+                            multi=True,
+                            value=sorted(df_proactief.profiel.unique()),
+                        ),
+
+                    ],
+                    id='leftCol_proactief',
+                    className="pretty_container four columns",
+                ),
+
+                # Map div.
+                html.Div(
+                    [
+
+                        # Map with selectable points.
+                        html.Div(
+                            dcc.Graph(
+                                id='map_proactief',
+                                config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
+                            ),
+                            className="pretty_container",
+                            # style={'height': 500}
+                        ),
+                    ],
+                    id="rightCol_proactief",
+                    className="eight columns"
+                ),
+
+            ],
+            className="row",
         ),
+
+
+        # Data table div.
+        html.Div(
+            [
+                # Filtered entries data table.
+                html.Div(
+                    [
+                        html.P('Gefilterde meldingen'),
+                        dt.DataTable(
+                            id='filtered_table_proactief',
+                            columns = TABLE_COLUMNS,
+                            sort_action='native',
+                            sort_by=[{'column_id': 'fraude_kans', 'direction': 'desc'}],
+                            # filter_action='native',  # Maybe turn off? A text field to filter feels clunky..
+                            # row_selectable='multi',
+                            # selected_rows=[],
+                            page_action='native',
+                            page_current=0,
+                            page_size=20,
+                            style_data_conditional=[
+                                {
+                                    'if': {
+                                        'column_id': 'woonfraude',
+                                        'filter_query': '{woonfraude} eq True'
+                                    },
+                                    'backgroundColor': colors['fraud'],
+                                },
+                                {
+                                    'if': {
+                                        'column_id': 'woonfraude',
+                                        'filter_query': '{woonfraude} eq False'
+                                    },
+                                    'backgroundColor': colors['no_fraud'],
+                                },
+                                {
+                                    'if': {
+                                        'column_id': 'fraude_kans',
+                                        'filter_query': '{fraude_kans} ge 0.5'
+                                    },
+                                    'backgroundColor': colors['fraud'],
+                                },
+                                {
+                                    'if': {
+                                        'column_id': 'fraude_kans',
+                                        'filter_query': '{fraude_kans} lt 0.5'
+                                    },
+                                    'backgroundColor': colors['no_fraud'],
+                                }
+                            ]
+                        ),
+
+                    ],
+                    className="pretty_container ten columns",
+                ),
+
+                # Filtered entries stadsdeel split (pie chart).
+                html.Div(
+                    [
+                        html.P("Gefilterde meldingen - Stadsdeel split"),
+                        dcc.Graph(
+                            id="stadsdeel_split_proactief",
+                            config={'displayModeBar': False},
+                        )
+                    ],
+                    id="stadsdeel_proactief",
+                    className="pretty_container two columns"
+                ),
+
+            ],
+            className="row"
+        ),
+
+
+
+
+        # html.Div(
+        #     dcc.Graph(
+        #         id='map_proactief',
+        #         config={'displayModeBar': False},  # Turned off to disable selection with box/lasso etc.
+        #     ),
+        #     className="pretty_container",
+        # ),
+
     ],
     style={
         "display": "flex",
@@ -484,9 +638,16 @@ app.layout = html.Div([
     Input('stadsdeel_dropdown', 'value')]
 )
 def create_data_selection(selected_categories, selected_stadsdelen):
-    # Create a filtered copy of the original dataframe.
-    filtered_df = filter_df(df, selected_categories, selected_stadsdelen)
-    return filtered_df.to_json(date_format='iso', orient='split')
+    # Create a copy of the original dataframe.
+    df_filtered = deepcopy(df)
+
+    # Filter the original dataframe by selected categories.
+    df_filtered = df_filtered[df_filtered.categorie.isin(selected_categories)]
+
+    # Filter the dataframe by selected stadsdelen.
+    df_filtered = df_filtered[df_filtered.stadsdeel.isin(selected_stadsdelen)]
+
+    return df_filtered.to_json(date_format='iso', orient='split')
 
 '''
 # Updates the aantal_meldingen info box.
@@ -968,12 +1129,63 @@ def make_stadsdeel_split_bar_chart(intermediate_value):
 # Proactief tab functies #
 ###########################
 
+# @app.callback(
+#     Output('intermediate_value_proactief', 'children'),
+#     [Input('none_proactief', 'children')]
+# )
+# def create_data_selection(_):
+#     return df_proactief.to_json(date_format='iso', orient='split')
+
+
+# Updates the intermediate data based on the dropdown selection.
 @app.callback(
     Output('intermediate_value_proactief', 'children'),
-    [Input('none_proactief', 'children')]
+    [Input('aantal_meldingen_rangeslider_proactief', 'value'),
+    Input('aantal_volwassenen_rangeslider_proactief', 'value'),
+    Input('aantal_m2_per_persoon_rangeslider_proactief', 'value'),
+    Input('stadsdeel_dropdown_proactief', 'value'),
+    Input('hotline_dropdown_proactief', 'value'),
+    Input('gebruikersdoel_dropdown_proactief', 'value'),
+    Input('profiel_dropdown_proactief', 'value')]
 )
-def create_data_selection(_):
-    return df_proactief.to_json(date_format='iso', orient='split')
+def create_data_selection(aantal_meldingen_range, aantal_volwassenen,
+                          aantal_m2_per_persoon, selected_stadsdelen, is_hotline,
+                          selected_gebruikersdoelen, selected_profielen):
+
+    # Create a copy of the original dataframe.
+    df_filtered = deepcopy(df_proactief)
+
+    # Filter the original dataframe by aantal meldingen.
+    min_meldingen = aantal_meldingen_range[0]
+    max_meldingen = aantal_meldingen_range[1]
+    df_filtered = df_filtered[(df_filtered.aantal_meldingen >= min_meldingen) & (df_filtered.aantal_meldingen <= max_meldingen)]
+
+    # Filter on number of adults
+    min_adults = aantal_volwassenen[0]
+    max_adults = aantal_volwassenen[1]
+    df_filtered = df_filtered[(df_filtered.aantal_volwassenen >= min_adults) & (df_filtered.aantal_volwassenen <= max_adults)]
+
+    # Filter on the amount of m2 per person.
+    min_m2_pp = aantal_m2_per_persoon[0]
+    max_m2_pp = aantal_m2_per_persoon[1]
+    df_filtered = df_filtered[(df_filtered.m2_per_persoon >= min_m2_pp) & (df_filtered.m2_per_persoon <= max_m2_pp)]
+
+    # Filter the dataframe by selected stadsdelen.
+    df_filtered = df_filtered[df_filtered.stadsdeel.isin(selected_stadsdelen)]
+
+    # Filter the dataframe based on whether the meldingen are hotline meldingen.
+    # To do this, first convert the is_hotline values (strings) to booleans for matching.
+    is_hotline = [True if x=='True' else x for x in is_hotline]
+    is_hotline = [False if x=='False' else x for x in is_hotline]
+    df_filtered = df_filtered[df_filtered.is_hotline.isin(is_hotline)]
+
+    # Filter the dataframe by selected gebruikersdoelen.
+    df_filtered = df_filtered[df_filtered.gebruikersdoel.isin(selected_gebruikersdoelen)]
+
+    # Filter the dataframe by selected profiles.
+    df_filtered = df_filtered[df_filtered.profiel.isin(selected_profielen)]
+
+    return df_filtered.to_json(date_format='iso', orient='split')
 
 
 @app.callback(
@@ -1051,6 +1263,60 @@ def plot_map(intermediate_value_proactief):
         )
     }
 
+    return figure
+
+
+# Updates the table showing all data points after dropdown-selections.
+@app.callback(
+    Output('filtered_table_proactief', 'data'),
+    [Input('intermediate_value_proactief', 'children')]
+)
+def generate_filtered_table(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df_table = pd.read_json(intermediate_value, orient='split')
+
+    # Transform True and False boolean values to strings.
+    df_table.woonfraude = df_table.woonfraude.replace({True: 'True', False: 'False'})
+
+    # Only use a selection of the columns.
+    df_table = df_table[SELECTED_COLUMNS]
+
+    # Create a table, with all positive woonfraude examples at the top.
+    columns = [{"name": i, "id": i} for i in df_table.columns]
+    data = df_table.to_dict('records')
+
+    return data
+
+
+# Updates the stadsdeel split PIE chart.
+@app.callback(
+    Output('stadsdeel_split_proactief', 'figure'),
+    [Input('intermediate_value_proactief', 'children')]
+)
+def make_stadsdeel_pie_chart(intermediate_value):
+
+    # Load the pre-filtered version of the dataframe.
+    df = pd.read_json(intermediate_value, orient='split')
+
+    # Create value counts per stadsdeel.
+    stadsdeel_value_counts = df.stadsdeel.value_counts().sort_index()
+
+    figure={
+        'data': [
+            go.Pie(
+                labels=stadsdeel_value_counts.index,
+                values=stadsdeel_value_counts.values
+            )
+        ],
+        'layout': go.Layout(
+            height=300,
+            margin=go.layout.Margin(l=0, r=0, b=100, t=0, pad=0),
+            showlegend=True,
+            legend=dict(orientation='h', font={'size':10}),
+            paper_bgcolor=colors['container_background'],
+        )
+    }
     return figure
 
 
