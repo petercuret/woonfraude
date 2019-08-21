@@ -20,14 +20,15 @@ import os
 # Import own modules
 import config, clean_oo
 
-# Define HOME and DATA_PATH on a global level
-HOME = str(Path.home())  # Home path for old VAO.
+# Define HOME and DATA_PATH on a global level.
+HOME = Path.home()  # Home path for old VAO.
 USERNAME = os.path.basename(HOME)
 HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
-DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data')
+DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
 
-# HOME = str(Path.home())
-# DATA_PATH = f'{HOME}/Documents/woonfraude/data/'
+# Old VAO code.
+# HOME = Path.home()
+# DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
 
 
 class MyDataset():
@@ -469,7 +470,7 @@ class ZakenDataset(MyDataset):
         """Add categories to the zaken dataframe."""
         clean_oo.lower_strings(self.data)
         add_column(df=self.data, new_col='categorie', match_col='beh_oms',
-                   csv_path=f'{HOME}/Documents/woonfraude/data/aanvulling_beh_oms.csv')
+                   csv_path=os.path.join(HOME, Documents/woonfraude/data/aanvulling_beh_oms.csv))
         self.version += '_categories'
         self.save()
 
@@ -551,7 +552,7 @@ class StadiaDataset(MyDataset):
         """Add labels to the zaken dataframe."""
         clean_oo.lower_strings(self.data)
         add_column(df=self.data, new_col='label', match_col='sta_oms',
-                   csv_path=f'{HOME}/Documents/woonfraude/data/aanvulling_sta_oms.csv')
+                   csv_path=os.path.join(HOME, 'Documents/woonfraude/data/aanvulling_sta_oms.csv'))
         self.version += '_labels'
         self.save()
 
@@ -656,11 +657,13 @@ def add_column(df, new_col, match_col, csv_path, key='lcolumn', val='ncolumn'):
 
 def save_dataset(data, dataset_name, version):
     """Save a version of the given dataframe."""
-    data.to_hdf(path_or_buf=f"{DATA_PATH}{dataset_name}_{version}.h5", key=dataset_name, mode='w')
+    dataset_path = os.path.join(DATA_PATH, f'{dataset_name}_{version}.h5')
+    data.to_hdf(path_or_buf=dataset_path, key=dataset_name, mode='w')
 
 
 def load_dataset(dataset_name, version):
     """Load a version of the dataframe from file. Rename it (pickling removes name)."""
-    data = pd.read_hdf(path_or_buf=f"{DATA_PATH}{dataset_name}_{version}.h5", key=dataset_name, mode='r')
+    dataset_path = os.path.join(DATA_PATH, f'{dataset_name}_{version}.h5')
+    data = pd.read_hdf(path_or_buf=dataset_path, key=dataset_name, mode='r')
     data.name = dataset_name # Set the dataframe name again after loading (it is lost when saving).
     return data
