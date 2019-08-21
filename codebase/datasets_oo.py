@@ -14,14 +14,20 @@ import numpy as np
 import requests
 import psycopg2
 import time
+import os
 # from torch.utils.data import Dataset
 
 # Import own modules
 import config, clean_oo
 
 # Define HOME and DATA_PATH on a global level
-HOME = str(Path.home())
-DATA_PATH = f'{HOME}/Documents/woonfraude/data/'
+HOME = str(Path.home())  # Home path for old VAO.
+USERNAME = os.path.basename(HOME)
+HOME = os.path.join('data', USERNAME)  # Set home for new VAO.
+DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data')
+
+# HOME = str(Path.home())
+# DATA_PATH = f'{HOME}/Documents/woonfraude/data/'
 
 
 class MyDataset():
