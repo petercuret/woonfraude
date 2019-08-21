@@ -25,7 +25,10 @@ DATA_PATH = f'{HOME}/Documents/woonfraude/data/'
 
 
 class MyDataset():
-    """Dataset containing address data."""
+    """
+    Generic dataset template implementing generic functionalities.
+    All other dataset classes inherit from this one.
+    """
 
     # Define class attributed (name, id_column), which have to get a value in all subclasses.
     name = None
@@ -48,7 +51,6 @@ class MyDataset():
         """Load a previously processed version of the dataset."""
         try:
             self.data = load_dataset(self.name, version)
-            self.data.name = self.name  # Set the df name again after loading (it is lost at saving).
             self.version = version
             print(f"Version '{self.version}' of dataset '{self.name}' loaded!")
         except FileNotFoundError as e:
@@ -245,24 +247,27 @@ class AdresDataset(MyDataset):
         # Merge dataframes on adres dataframe.
         new_df = pd.merge(adres, bag,  how='left', left_on=['sttnaam','hsnr'], right_on = ['_openbare_ruimte_naam_nummeraanduiding', 'huisnummer_nummeraanduiding'])
 
-        # Find id's that have a direct match and that have multiple matches
+        # Find id's that have a direct match and that have multiple matches.
         g = new_df.groupby('adres_id')
         df_direct = g.filter(lambda x: len(x) == 1)
         df_multiple = g.filter(lambda x: len(x) > 1)
 
-        # Make multiplematch more specific to construct perfect match
+        # Make multiplematch more specific to construct perfect match.
         df_multiple = df_multiple[(df_multiple['hsltr'] == df_multiple['huisletter_nummeraanduiding']) & (df_multiple['toev'] == df_multiple['huisnummer_toevoeging_nummeraanduiding'])]
 
-        # Concat df_direct and df_multiple
+        # Concat df_direct and df_multiple.
         df_result = pd.concat([df_direct, df_multiple])
 
-        # Because of the seperation of an object, there are two matching objects. Keep the oldest object with definif point
+        # Because of the seperation of an object, there are two matching objects. Keep the oldest object with definif point.
         df_result = df_result.sort_values(['adres_id', 'status_coordinaat_code'])
         df_result = df_result.drop_duplicates(subset='adres_id', keep='first')
 
-        # Add adresses without match
+        # Add adresses without match.
         final_df = pd.merge(adres, df_result,  how='left', on='adres_id', suffixes=('', '_y'))
         final_df.drop(list(final_df.filter(regex='_y$')), axis=1, inplace=True)
+
+        # Set the name of the final adres dataframe again.
+        final_df.name = 'adres'
 
         return final_df
 
@@ -294,6 +299,7 @@ class AdresDataset(MyDataset):
         self.data = self.impute_values_for_bagless_addresses(self.data)
         self.version += '_bag'
         self.save()
+        print("The adres dataset is now enriched with BAG data.")
 
 
     def enrich_with_personen_features(self, personen):
@@ -351,7 +357,7 @@ class AdresDataset(MyDataset):
         for i in range(1,8):
             adres[f'gezinsverhouding_{i}'] = 0
             adres[f'percentage_gezinsverhouding_{i}'] = 0.
-        print("Now looping over all rows in the main dataframe in order to add person information...")
+        print("Now looping over all rows in the adres dataframe in order to add person information...")
         for i in adres.index:
             if i % 1000 == 0:
                 print(i)
@@ -423,6 +429,8 @@ class AdresDataset(MyDataset):
         self.data = adres
         self.version += '_personen'
         self.save()
+        print("The adres dataset is now enriched with personen data.")
+
 
     def add_hotline_features(self, hotline):
         """Add the hotline features to the adres dataframe."""
@@ -439,6 +447,7 @@ class AdresDataset(MyDataset):
         self.data = self.data.merge(hotline_counts, on='adres_id', how='left')
         self.version += '_hotline'
         self.save()
+        print("The adres dataset is now enriched with hotline data.")
 
 
 class ZakenDataset(MyDataset):
@@ -647,4 +656,5 @@ def save_dataset(data, dataset_name, version):
 def load_dataset(dataset_name, version):
     """Load a version of the dataframe from file. Rename it (pickling removes name)."""
     data = pd.read_hdf(path_or_buf=f"{DATA_PATH}{dataset_name}_{version}.h5", key=dataset_name, mode='r')
+    data.name = dataset_name # Set the dataframe name again after loading (it is lost when saving).
     return data

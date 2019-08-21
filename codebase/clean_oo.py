@@ -139,6 +139,7 @@ def impute_missing_values(df):
 
     # Impute missing values by using the column averages.
     df.fillna(value=averages, inplace=True)
+    print("Missing values in df %s have been imputed!" % (df.name))
 
 
 # DEZE SCHRIJVEN MET STANDARD IMPUTER UIT SKLEARN! #
@@ -155,3 +156,4 @@ def impute_missing_values_mode(df, cols):
 
     # Impute missing values by using the columns modes.
     df.fillna(value=modes, inplace=True)
+    print("Missing values (using mode) of cols %s in df %s have been imputed!" % (cols, df.name))
