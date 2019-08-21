@@ -23,7 +23,7 @@ import config, clean_oo
 # Define HOME and DATA_PATH on a global level
 HOME = str(Path.home())  # Home path for old VAO.
 USERNAME = os.path.basename(HOME)
-HOME = os.path.join('data', USERNAME)  # Set home for new VAO.
+HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
 DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data')
 
 # HOME = str(Path.home())
