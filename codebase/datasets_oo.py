@@ -15,6 +15,7 @@ import requests
 import psycopg2
 import time
 import os
+import re
 # from torch.utils.data import Dataset
 
 # Import own modules
@@ -22,8 +23,8 @@ import config, clean_oo
 
 # Define HOME and DATA_PATH on a global level.
 HOME = Path.home()  # Home path for old VAO.
-USERNAME = os.path.basename(HOME)
-HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
+# USERNAME = os.path.basename(HOME)
+# HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
 DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
 
 # Old VAO code.
@@ -470,7 +471,7 @@ class ZakenDataset(MyDataset):
         """Add categories to the zaken dataframe."""
         clean_oo.lower_strings(self.data)
         add_column(df=self.data, new_col='categorie', match_col='beh_oms',
-                   csv_path=os.path.join(HOME, Documents/woonfraude/data/aanvulling_beh_oms.csv))
+                   csv_path=os.path.join(HOME, 'Documents/woonfraude/data/aanvulling_beh_oms.csv'))
         self.version += '_categories'
         self.save()
 
@@ -529,6 +530,28 @@ class ZakenDataset(MyDataset):
         self.data = finished_cases
         self.version += '_finishedCases'
         self.save()
+
+
+    def add_binary_label_zaken(self, stadia):
+        """Create a binary label defining whether there was woonfraude."""
+
+        # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
+        self.data['woonfraude'] = False # Set default value to false
+        zaken_mask = self.data.loc[self.data['afs_oms'].str.contains('zl woning is beschikbaar gekomen',
+                                                             regex=True, flags=re.IGNORECASE) == True]
+        stadia_mask = stadia.loc[stadia['sta_oms'].str.contains('rapport naar han', regex=True,
+                                                                flags=re.IGNORECASE) == True]
+        zaken_ids_zaken = zaken_mask['zaak_id'].tolist()
+        zaken_ids_stadia = stadia_mask['zaak_id'].tolist()
+        zaken_ids = list(set(zaken_ids_zaken + zaken_ids_stadia))  # Get uniques
+        self.data.loc[self.data['zaak_id'].isin(zaken_ids), 'woonfraude'] = True  # Add woonfraude label
+
+        # Add woonfraude class labels.
+        # zaken.loc[zaken['zaak_id'].isin(zaken_ids_zaken), 'woonfraude'] = 'zoeklicht'
+        # zaken.loc[zaken['zaak_id'].isin(zaken_ids_stadia), 'woonfraude'] = 'rapport_handhaving'
+
+        # Print results
+        print(f'Dataframe "zaken": added column "woonfraude" (binary label)')
 
 
 class StadiaDataset(MyDataset):
