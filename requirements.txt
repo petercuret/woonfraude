@@ -1,0 +1,48 @@
+########################################################################################
+# This file defines all Python package requirements for this project.                  #
+#                                                                                      #
+# Install packages using shell command: pip install -r requirements.txt                #
+#                                                                                      #
+# Created by Thomas Jongstra 2019 - for the Municipality of Amsterdam                  #
+########################################################################################
+
+############
+# Codebase #
+############
+
+sklearn
+imblearn
+numpy
+pandas
+psycopg2
+requests
+
+
+#############
+# Dashboard #
+#############
+
+dash
+dash-core-components
+dash-html-components
+urllib
+plotly
+
+
+###########################
+# New Research (Felicien) #
+###########################
+
+torch
+torchvision
+lime
+
+
+#########################
+# Handy for Development #
+#########################
+
+matplotlib
+seaborn
+tqdm
+q

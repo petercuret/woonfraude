@@ -1,0 +1,3 @@
+github.com
+alle adressen die nodig zijn om github.com normaal visueel te laten renderen
+api.mapbox.com
