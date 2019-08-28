@@ -46,22 +46,32 @@ from dash.dependencies import Input, Output, State, ClientsideFunction
 import pandas as pd
 import urllib
 import json
+import sys
+import os
 import re
 import q
 from copy import deepcopy
 
 import plotly.graph_objs as go
 
+# Add the parent paths to sys.path, so our own modules on the root dir can also be imported.
+SCRIPT_PATH = os.path.abspath(__file__)
+SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
+PARENT_PATH = os.path.join(SCRIPT_DIR, os.path.pardir)
+sys.path.append(PARENT_PATH)
+
 # Import own modules.
 import config
+from codebase import build_model
+
 ###############################################################################
 
 
 ###############################################################################
 # Load mock-up data for prototyping purposes.
-df = pd.read_csv('mockup_dataset.csv', sep=';', skipinitialspace=True)
-df_proactief = pd.read_csv('mockup_dataset_proactief.csv', sep=';', skipinitialspace=True)
-df_unsupervised = pd.read_csv('mockup_dataset_unsupervised.csv', sep=';', skipinitialspace=True)
+df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
+df_proactief = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_proactief.csv'), sep=';', skipinitialspace=True)
+df_unsupervised = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_unsupervised.csv'), sep=';', skipinitialspace=True)
 ###############################################################################
 
 
@@ -195,6 +205,11 @@ meldingen_tab = html.Div(
                             href="",
                             target="_blank",
                         ),
+
+                        # Button test.
+                        html.P(''),
+                        html.Button('Test', id='button'),
+                        html.P('', id='button_n_clicks')
 
                     ],
                     id='leftCol',
@@ -949,6 +964,15 @@ def update_download_link(filtered_point_selection_table):
     csv_string = df.to_csv(index=False, encoding='utf-8', sep=';')
     csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
     return csv_string
+
+
+# Test for our button output.
+@app.callback(
+    Output('button_n_clicks', 'children'),
+    [Input('button', 'n_clicks')])
+def show_number_of_button_clicks(button_n_clicks):
+    print("Dit is een test!")
+    return str(button_n_clicks)
 
 
 # Updates the stadsdeel split PIE chart.
