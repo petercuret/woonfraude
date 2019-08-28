@@ -15,7 +15,6 @@ Written by Swaan Dekkers & Thomas Jongstra
 import os, sys
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from collections import Counter
 
 # Import ML Methods
@@ -269,35 +268,3 @@ def run_extra_trees(X_train, y_train, X_dev, y_dev, n_estimators, max_features, 
     # print(clf.feature_importances_)
 
     return clf, precision, recall, f1, f05, conf, report
-
-
-# def import_features():
-#     # Import de output van extract_features.py
-#     df = pd.read_pickle('../../data/df_adres_features.pkl')
-#     df = df.fillna('')
-#     df = df[df['landelijk_bag']!='']
-
-#     print(df.head())
-#     return df
-
-# def split_data():
-#     # Split dataset into train and test data, make sure to do this random as the data is organised based on date
-#     pass
-
-# def train_model():
-#     # train moodel on train set
-#     pass
-
-# def test_model():
-#     # test model
-#     pass
-
-# def main():
-#     import_features()
-#     split_data()
-#     train_model()
-#     test_model()
-
-# if __name__ == "__main__":
-#     main()
-
