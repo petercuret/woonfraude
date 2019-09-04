@@ -73,7 +73,7 @@ from codebase import dashboard_link
 
 # Try to create a list of 100 meldingen from the data.
 try:
-    df = dashboard_link.get_recent_signals_predictions()
+    df = dashboard_link.get_recent_meldingen_predictions()
 except e:
     df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
 
@@ -102,7 +102,7 @@ colors = {'paper': '#DDDDDD',
 #############################
 
 # Get dictionary of columns for DataTable.
-SELECTED_COLUMNS = ['fraude_kans', 'woonfraude', 'adres_id', 'stadsdeel', 'categorie', 'eigenaar']
+SELECTED_COLUMNS = ['fraude_kans', 'woonfraude', 'adres_id', 'sdl_naam', 'categorie', 'eigenaar']
 TABLE_COLUMNS = [{'name': i, 'id': i} for i in SELECTED_COLUMNS]
 
 # Define styling for the first column (fraude_kans), to reduce the decimals after comma.
@@ -153,9 +153,9 @@ meldingen_tab = html.Div(
                         dcc.Dropdown(
                             id='stadsdeel_dropdown',
                             placeholder='Selecteer stadsdelen',
-                            options=[{'label': x, 'value': x} for x in sorted(df.stadsdeel.unique())],
+                            options=[{'label': x, 'value': x} for x in sorted(df.sdl_naam.unique())],
                             multi=True,
-                            value=sorted(df.stadsdeel.unique()),
+                            value=sorted(df.sdl_naam.unique()),
                             ),
 
                         # Show info of items selected on map (using click).
@@ -459,9 +459,9 @@ proactief_tab = html.Div(
                         dcc.Dropdown(
                             id='stadsdeel_dropdown_proactief',
                             placeholder='Selecteer stadsdelen',
-                            options=[{'label': x, 'value': x} for x in sorted(df_proactief.stadsdeel.unique())],
+                            options=[{'label': x, 'value': x} for x in sorted(df_proactief.sdl_naam.unique())],
                             multi=True,
-                            value=sorted(df_proactief.stadsdeel.unique()),
+                            value=sorted(df_proactief.sdl_naam.unique()),
                         ),
 
                         # Create hotline dropdown.
@@ -667,7 +667,7 @@ def create_data_selection(selected_categories, selected_stadsdelen):
     df_filtered = df_filtered[df_filtered.categorie.isin(selected_categories)]
 
     # Filter the dataframe by selected stadsdelen.
-    df_filtered = df_filtered[df_filtered.stadsdeel.isin(selected_stadsdelen)]
+    df_filtered = df_filtered[df_filtered.sdl_naam.isin(selected_stadsdelen)]
 
     return df_filtered.to_json(date_format='iso', orient='split')
 
@@ -993,7 +993,7 @@ def make_stadsdeel_pie_chart(intermediate_value):
     df = pd.read_json(intermediate_value, orient='split')
 
     # Create value counts per stadsdeel.
-    stadsdeel_value_counts = df.stadsdeel.value_counts().sort_index()
+    stadsdeel_value_counts = df.sdl_naam.value_counts().sort_index()
 
     figure={
         'data': [
@@ -1202,7 +1202,7 @@ def create_data_selection(aantal_meldingen_range, aantal_volwassenen,
     df_filtered = df_filtered[(df_filtered.m2_per_persoon >= min_m2_pp) & (df_filtered.m2_per_persoon <= max_m2_pp)]
 
     # Filter the dataframe by selected stadsdelen.
-    df_filtered = df_filtered[df_filtered.stadsdeel.isin(selected_stadsdelen)]
+    df_filtered = df_filtered[df_filtered.sdl_naam.isin(selected_stadsdelen)]
 
     # Filter the dataframe based on whether the meldingen are hotline meldingen.
     # To do this, first convert the is_hotline values (strings) to booleans for matching.
@@ -1331,7 +1331,7 @@ def make_stadsdeel_pie_chart(intermediate_value):
     df = pd.read_json(intermediate_value, orient='split')
 
     # Create value counts per stadsdeel.
-    stadsdeel_value_counts = df.stadsdeel.value_counts().sort_index()
+    stadsdeel_value_counts = df.sdl_naam.value_counts().sort_index()
 
     figure={
         'data': [
