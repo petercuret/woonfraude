@@ -166,5 +166,5 @@ def impute_missing_values_mode(df, cols):
 
 def impute_missing_values_custom(df, col_dict):
     """Impute the missing values of each column defined in the dict keys, with the corresponding dict value."""
-    df.fillna(values=col_dict, inplace=True)
+    df.fillna(value=col_dict, inplace=True)
     print("Missing values (using custom strategy) of cols %s in df %s have been imputed!" % (str(list(col_dict.keys())), df.name))
