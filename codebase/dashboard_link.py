@@ -19,8 +19,10 @@ import os
 # Add the parent paths to sys.path, so our own modules on the root dir can also be imported.
 SCRIPT_PATH = os.path.abspath(__file__)
 SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
-PARENT_PATH = os.path.join(SCRIPT_DIR, os.path.pardir)
+PARENT_PATH = os.path.abspath(os.path.join(SCRIPT_DIR, os.path.pardir))
+CODEBASE_PATH = os.path.abspath(os.path.join(PARENT_PATH, 'codebase'))
 sys.path.append(PARENT_PATH)
+sys.path.append(CODEBASE_PATH)
 
 # Import own modules.
 from datasets_oo import *
