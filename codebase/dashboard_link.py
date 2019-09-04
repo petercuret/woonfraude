@@ -33,12 +33,6 @@ def load_data():
     """Load the final pre-processed and enriched version of the zaken dataset."""
     zakenDataset = ZakenDataset()
     zakenDataset.load('final')
-    # Remove adres_id column (should not be used for predictions).
-    zakenDataset.data.drop(columns=['adres_id'], inplace=True)
-    # Remove non-numeric columns.
-    zakenDataset.data = zakenDataset.data._get_numeric_data()
-    # Remove columns containing only NaN values.
-    zakenDataset.data.drop(columns=['hoofdadres', 'begin_geldigheid'], inplace=True)
     return zakenDataset
 
 
@@ -52,20 +46,35 @@ def load_pre_trained_model():
     return model
 
 
+
 def get_recent_signals(zakenDataset, n=100):
     """Create a list the n most recent ICTU signals from our data."""
-    recent_signals = zakenDataset.data.sample(100)  # INSTEAD OF PICKING THE MOST RECENT SIGNALS, WE TEMPORARILY RANDOMLY SAMPLE THEM FOR OUR MOCK UP!
-    recent_signals.drop(columns=['woonfraude'], inplace=True)
-    return recent_signals
+    signals = zakenDataset.data.sample(100)  # INSTEAD OF PICKING THE MOST RECENT SIGNALS, WE TEMPORARILY RANDOMLY SAMPLE THEM FOR OUR MOCK UP!
+    signals.drop(columns=['woonfraude'], inplace=True)  # For the final list of signals, this step should not be necessary either.
+    return signals
 
 
-def get_recent_signals_predictions():
-    """Create predictions for the most recent signals on-the-fly."""
+def create_signals_predictions(model, signals):
+    """Create predictions for signals using a given model."""
+
+    # Remove adres_id column (should not be used for predictions).
+    signals.drop(columns=['adres_id'], inplace=True)
+    # Remove non-numeric columns.
+    signals = signals._get_numeric_data()
+    # Remove columns containing only NaN values.
+    signals.drop(columns=['hoofdadres', 'begin_geldigheid'], inplace=True)
+    # Create predictions.
+    predictions = model.predict(signals)
+    return predictions
+
+
+def process_recent_signals():
+    """Create a list of recent signals and their computed fraud predictions."""
     zakenDataset = load_data()
     model = load_pre_trained_model()
     recent_signals = get_recent_signals(zakenDataset)
     model = load_pre_trained_model()
-    predictions = model.predict(recent_signals)
+    predictions = create_signals_predictions(model, recent_signals)
     recent_signals['woonfraude'] = predictions
     recent_signals['fraude_kans'] = recent_signals['woonfraude'].astype(int)  # Temporarily create a fraude_kans column to be compatible with the dashboard.
     return recent_signals
