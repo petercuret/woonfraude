@@ -73,9 +73,12 @@ from codebase import dashboard_link
 
 # Try to create a list of 100 meldingen from the data.
 try:
-    df = dashboard_link.get_recent_meldingen_predictions()
-except e:
+
+    df = dashboard_link.process_recent_signals()
+    print('Succesfully created prediction for recent signals.')
+except:
     df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
+    print('Cannot generate predictions from the data. Falling back to using the mockup_dataset.csv')
 
 df_proactief = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_proactief.csv'), sep=';', skipinitialspace=True)
 df_unsupervised = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_unsupervised.csv'), sep=';', skipinitialspace=True)
@@ -978,7 +981,6 @@ def update_download_link(filtered_point_selection_table):
     Output('button_n_clicks', 'children'),
     [Input('button', 'n_clicks')])
 def show_number_of_button_clicks(button_n_clicks):
-    print("Dit is een test!")
     return str(button_n_clicks)
 
 
