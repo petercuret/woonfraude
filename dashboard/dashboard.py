@@ -73,7 +73,6 @@ from codebase import dashboard_link
 
 # Try to create a list of 100 meldingen from the data.
 try:
-
     df = dashboard_link.process_recent_signals()
     print('Succesfully created prediction for recent signals.')
 except:
