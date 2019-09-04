@@ -13,6 +13,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 
 # Import public modules.
 import pickle
+import copy
 import sys
 import os
 
@@ -73,8 +74,9 @@ def process_recent_signals():
     zakenDataset = load_data()
     model = load_pre_trained_model()
     recent_signals = get_recent_signals(zakenDataset)
+    recent_signals_for_predictions = copy.deepcopy(recent_signals)
     model = load_pre_trained_model()
-    predictions = create_signals_predictions(model, recent_signals)
+    predictions = create_signals_predictions(model, recent_signals_for_predictions)
     recent_signals['woonfraude'] = predictions
     recent_signals['fraude_kans'] = recent_signals['woonfraude'].astype(int)  # Temporarily create a fraude_kans column to be compatible with the dashboard.
     return recent_signals
