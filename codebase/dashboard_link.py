@@ -63,5 +63,5 @@ def get_recent_meldingen_predictions():
     recent_signals = get_recent_signals(zakenDataset)
     model = load_pre_trained_model()
     predictions = model.predict(recent_signals)
-    recent_signals['woonfraude_predicted'] = predictions  # Check if this works. We probably should maps "predictions" to a Pandas Series to get this to work.
+    recent_signals['woonfraude_predicted'] = predictions
     return recent_signals
