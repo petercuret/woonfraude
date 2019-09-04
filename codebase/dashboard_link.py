@@ -31,6 +31,12 @@ def load_data():
     """Load the final pre-processed and enriched version of the zaken dataset."""
     zakenDataset = ZakenDataset()
     zakenDataset.load('final')
+    # Remove adres_id column (should not be used for predictions).
+    zakenDataset.data.drop(columns=['adres_id'], inplace=True)
+    # Remove non-numeric columns.
+    zakenDataset.data = zakenDataset.data._get_numeric_data()
+    # Remove columns containing only NaN values.
+    zakenDataset.data.drop(columns=['hoofdadres', 'begin_geldigheid'], inplace=True)
     return zakenDataset
 
 
@@ -39,7 +45,8 @@ def load_pre_trained_model():
     Load a pre-trained machine learning model, which can calculate the statistical
     chance of housing fraud for a list of addresses.
     """
-    model = pickle.load(open("best_random_forest_classifier_temp.pickle", "rb"))
+    model_path = os.path.join(os.path.join(PARENT_PATH, 'data'), 'best_random_forest_classifier_temp.pickle')
+    model = pickle.load(open(model_path, "rb"))
     return model
 
 
@@ -55,5 +62,6 @@ def get_recent_meldingen_predictions():
     model = load_pre_trained_model()
     recent_signals = get_recent_signals(zakenDataset)
     model = load_pre_trained_model()
-    predictions = model.transform(df)
-    df['woonfraude_predicted'] = predictions  # Check if this works. We probably should maps "predictions" to a Pandas Series to get this to work.
+    predictions = model.predict(recent_signals)
+    recent_signals['woonfraude_predicted'] = predictions  # Check if this works. We probably should maps "predictions" to a Pandas Series to get this to work.
+    return recent_signals
