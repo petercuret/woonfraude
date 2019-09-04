@@ -63,13 +63,20 @@ sys.path.append(PARENT_PATH)
 # Import own modules.
 import config
 from codebase import build_model
+from codebase import dashboard_link
 
 ###############################################################################
 
 
 ###############################################################################
 # Load mock-up data for prototyping purposes.
-df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
+
+# Try to create a list of 100 meldingen from the data.
+try:
+    df = dashboard_link.get_recent_meldingen_predictions()
+except e:
+    df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
+
 df_proactief = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_proactief.csv'), sep=';', skipinitialspace=True)
 df_unsupervised = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_unsupervised.csv'), sep=';', skipinitialspace=True)
 ###############################################################################
