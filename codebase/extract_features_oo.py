@@ -67,7 +67,7 @@ def extract_text_features_cols_hot(df, cols):
         col_features = extract_text_features_col(df[col])
         all_col_features.append(col_features)
     df = pd.concat([df] + all_col_features, axis=1, sort=False)
-    df.drop(columns=cols, inplace=True)
+    # df.drop(columns=cols, inplace=True)
     return df
 
 def extract_categorical_cols_hot(df, cols):
@@ -79,7 +79,7 @@ def extract_categorical_cols_hot(df, cols):
         all_col_features.append(col_features)
         print("Done!")
     df = pd.concat([df] + all_col_features, axis=1, sort=False)
-    df.drop(columns=cols, inplace=True)
+    # df.drop(columns=cols, inplace=True)
     return df
 
 def extract_categorical_cols_no_hot(df, cols):
@@ -91,7 +91,7 @@ def extract_categorical_cols_no_hot(df, cols):
         all_col_features.append(col_features)
         print("Done!")
     df = pd.concat([df] + all_col_features, axis=1, sort=False)
-    df.drop(columns=cols, inplace=True)
+    # df.drop(columns=cols, inplace=True)
     return df
 
 
