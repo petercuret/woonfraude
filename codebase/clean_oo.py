@@ -42,6 +42,7 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
                  lower_string_columns = True,  # Contains list of columns to lower strings in. If True, all string columns are lowered.
                  impute_missing_values: bool = True,  # Impute missing values in all numeric and timestamp columns using averages.
                  impute_missing_values_mode: list = [],  # Impute missing values for a list of specific columns using the mode.
+                 impute_missing_values_custom: dict = {},  # impute missing values of each column defined in the key, with the value corresponding to the key.
                  fillna_columns: dict = {},  # Contains the following key-value pairs: key=column_name, value=value_to_be_imputed.
                 ):
         self.id_column = id_column
@@ -52,6 +53,8 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
         self.lower_string_columns = lower_string_columns
         self.impute_missing_values = impute_missing_values
         self.impute_missing_values_mode = impute_missing_values_mode
+        self.impute_missing_values_custom = impute_missing_values_custom
+
         self.fillna_columns = fillna_columns
 
     def fit(self, X, y=None):
@@ -72,6 +75,8 @@ class CleanTransformer(BaseEstimator, TransformerMixin):
             impute_missing_values(X)
         if len(self.impute_missing_values_mode) > 0:
             impute_missing_values_mode(X, self.impute_missing_values_mode)
+        if len(self.impute_missing_values_custom) > 0:
+            impute_missing_values_custom(X, self.impute_missing_values_custom)
         if len(self.fillna_columns) > 0:
             X.fillna(value=self.fillna_columns)
         return X
@@ -157,3 +162,9 @@ def impute_missing_values_mode(df, cols):
     # Impute missing values by using the columns modes.
     df.fillna(value=modes, inplace=True)
     print("Missing values (using mode) of cols %s in df %s have been imputed!" % (cols, df.name))
+
+
+def impute_missing_values_custom(df, col_dict):
+    """Impute the missing values of each column defined in the dict keys, with the corresponding dict value."""
+    df.fillna(values=col_dict, inplace=True)
+    print("Missing values (using custom strategy) of cols %s in df %s have been imputed!" % (str(list(col_dict.keys())), df.name))
