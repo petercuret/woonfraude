@@ -73,7 +73,7 @@ from codebase import dashboard_link
 
 # Try to create a list of 100 meldingen from the data.
 try:
-    df = dashboard_link.get_recent_meldingen_predictions()
+    df = dashboard_link.get_recent_signals_predictions()
 except e:
     df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
 
