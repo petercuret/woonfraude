@@ -59,11 +59,13 @@ def get_recent_signals(zakenDataset, n=100):
     return recent_signals
 
 
-def get_recent_meldingen_predictions():
+def get_recent_signals_predictions():
+    """Create predictions for the most recent signals on-the-fly."""
     zakenDataset = load_data()
     model = load_pre_trained_model()
     recent_signals = get_recent_signals(zakenDataset)
     model = load_pre_trained_model()
     predictions = model.predict(recent_signals)
-    recent_signals['woonfraude_predicted'] = predictions
+    recent_signals['woonfraude'] = predictions
+    recent_signals['fraude_kans'] = recent_signals['woonfraude'].astype(int)  # Temporarily create a fraude_kans column to be compatible with the dashboard.
     return recent_signals
