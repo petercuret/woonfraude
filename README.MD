@@ -4,7 +4,7 @@
 # Created by Thomas Jongstra 2019 - for the Municipality of Amsterdam                  #
 #####################################################################################-->
 
-# Woonfraude Detection
+# Woonfraude Detectie
 Project by: Swaan Dekkers, Saban Karki, Ammar Khawaja, Geert Reeken, Felicien Veldema, Thomas Jongstra
 
 #### Hoofdvraag
@@ -17,7 +17,7 @@ Is woonfraude te voorspellen met data?
 * Is te achterhalen welke zaken uit meldingen voortkomen, en welke niet?
 * Is dit te doen met een (aan handhavers) uitlegbaar algoritme?
 
-## Package Structuur
+## Pakket Structuur
 
 De code in dit pakket (package) is onderverdeeld in 3 subpaketten (subpackages):
 
