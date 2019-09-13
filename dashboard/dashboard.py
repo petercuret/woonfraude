@@ -1,41 +1,29 @@
-###############################################################################
-# Dit script implementeert een dashboard-applicatie voor het efficiënt plannen
-# van het handhavingsproces op basis van woonfraude-meldingen binnen
-# de gemeente van Amsterdam.
-#
-# Thomas Jongstra & Swaan Dekkers 2019
-#
-#
-# Basic intro on working with Dash: https://dash.plot.ly/getting-started
-#
-# Example dashboards using maps in Dash (from dash-gallery.plotly.host/Portal):
-# github.com/plotly/dash-sample-apps/blob/master/apps/dash-oil-and-gas/app.py
-# github.com/plotly/dash-oil-gas-ternary
-#
-#
-#
-# This application took some inspiration from this video:
-# https://www.youtube.com/watch?v=lu0PtsMor4E
-#
-# Inspiration has also been taken from the corresponding codebase:
-# https://github.com/amyoshino/Dash_Tutorial_Series  (full of errors etc!!)
-###############################################################################
+####################################################################################################
+# dashboard.py                                                                                    #
+#                                                                                                  #
+# This script implements a dashboard-applicatiom for the efficient planning of the municipal       #
+# enforcement process, based on housing fraud signals, within the municipality of Amsterdam.       #
+#                                                                                                  #
+# Thomas Jongstra & Swaan Dekkers 2019                                                             #
+#                                                                                                  #
+#                                                                                                  #
+# Basic intro on working with Dash: https://dash.plot.ly/getting-started                           #
+#                                                                                                  #
+# Example dashboards using maps in Dash (from dash-gallery.plotly.host/Portal):                    #
+# github.com/plotly/dash-sample-apps/blob/master/apps/dash-oil-and-gas/app.py                      #
+# github.com/plotly/dash-oil-gas-ternary                                                           #
+#                                                                                                  #
+# This dashboard took some inspiration from this video:                                            #
+# https://www.youtube.com/watch?v=lu0PtsMor4E                                                      #
+#                                                                                                  #
+# Inspiration has also been taken from the corresponding codebase:                                 #
+# https://github.com/amyoshino/Dash_Tutorial_Series (careful: this repo seems full of errors!!)    #
+####################################################################################################
 
+#############
+## Imports ##
+#############
 
-###############################################################################
-# TODO #
-########
-#
-# - Eigen legenda bouwen (ingebouwde legenda breekt eigen custom point selection functionality)
-# - Deploy code on VAO.
-# - Check RandomForestRegressor confidence precision:
-#     Is there a correlation between high confidence and true positives?
-#
-###############################################################################
-
-
-###############################################################################
-# Import public modules.
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -62,14 +50,12 @@ sys.path.append(PARENT_PATH)
 
 # Import own modules.
 import config
-from codebase import build_model
-from codebase import dashboard_link
-
-###############################################################################
+import dashboard_helper
 
 
-###############################################################################
-# Load mock-up data for prototyping purposes.
+#################################
+## Load server or mock-up data ##
+#################################
 
 # Try to create a list of 100 meldingen from the data.
 try:
@@ -81,11 +67,12 @@ except:
 
 df_proactief = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_proactief.csv'), sep=';', skipinitialspace=True)
 df_unsupervised = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_unsupervised.csv'), sep=';', skipinitialspace=True)
-###############################################################################
 
 
-###############################################################################
-# Define site visuals.
+#########################
+## Define site visuals ##
+#########################
+
 colors = {'paper': '#DDDDDD',
           'background': '#F2F2F2',
           'container_background': '#F9F9F9',
@@ -95,13 +82,11 @@ colors = {'paper': '#DDDDDD',
           'no_fraud': 'rgb(150, 150, 150)',
           'selected': 'rgb(75, 75, 75)',
           }
-###############################################################################
 
 
-###############################################################################
-#############################
-# Set some global variables #
-#############################
+###############################
+## Set some global variables ##
+###############################
 
 # Get dictionary of columns for DataTable.
 SELECTED_COLUMNS = ['fraude_kans', 'woonfraude', 'adres_id', 'sdl_naam', 'categorie', 'eigenaar']
@@ -111,11 +96,12 @@ TABLE_COLUMNS = [{'name': i, 'id': i} for i in SELECTED_COLUMNS]
 TABLE_COLUMNS[0]['name'] = 'Fraude kans (%)'
 TABLE_COLUMNS[0]['type'] = 'numeric'
 TABLE_COLUMNS[0]['format'] = FormatTemplate.percentage(2)
-###############################################################################
 
 
-###############################################################################
-# Define the dashboard.
+##########################
+## Define the dashboard ##
+##########################
+
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 # app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app = dash.Dash(__name__)
@@ -1157,9 +1143,9 @@ def make_stadsdeel_split_bar_chart(intermediate_value):
 '''
 
 
-###############################################################################
-# Proactief tab functies #
-###########################
+############################
+## Proactief tab functies ##
+############################
 
 # @app.callback(
 #     Output('intermediate_value_proactief', 'children'),
@@ -1352,9 +1338,9 @@ def make_stadsdeel_pie_chart(intermediate_value):
     return figure
 
 
-###############################################################################
-# Unsupervised tab functies #
-#############################
+###############################
+## Unsupervised tab functies ##
+###############################
 
 @app.callback(
     Output('intermediate_value_unsupervised', 'children'),
@@ -1442,8 +1428,8 @@ def plot_map(intermediate_value_unsupervised):
     return figure
 
 
-###############################################################################
-# Run dashboard when calling this script.
+#########################################
+## Start Dashboard when running script ##
+#########################################
 if __name__ == '__main__':
     app.run_server(debug=True, threaded=True)
-###############################################################################

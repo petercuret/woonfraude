@@ -242,9 +242,6 @@ def run_random_forest(X_train, y_train, X_dev, y_dev, n_estimators, max_features
     # Compute and show performance statistics.
     precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
 
-    # Show feature importances
-    # print(clf.feature_importances_)
-
     return clf, precision, recall, f1, f05, conf, report
 
 
@@ -263,8 +260,5 @@ def run_extra_trees(X_train, y_train, X_dev, y_dev, n_estimators, max_features, 
 
     # Compute and show performance statistics.
     precision, recall, f1, f05, conf, report = evaluate_performance(y_pred=y_pred, y_label=y_dev)
-
-    # Show feature importances
-    # print(clf.feature_importances_)
 
     return clf, precision, recall, f1, f05, conf, report

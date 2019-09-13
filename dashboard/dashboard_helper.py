@@ -1,17 +1,20 @@
-"""
-dashboard_link.py
+####################################################################################################
+# dashboard_helper.py                                                                              #
+#                                                                                                  #
+# This script provides the following functions to the dashboard,                                   #
+# hence creating a link between the codebase and the dashboard:                                    #
+#                                                                                                  #
+# - Creating a selection of the most recent ICTU signals.                                          #
+# - Loading a pre-trained prediction model.                                                        #
+# - Performing inference on a list of ICTU signals, using a loaded pre-trained model.              #
+#                                                                                                  #
+# Written by Swaan Dekkers & Thomas Jongstra                                                       #
+####################################################################################################
 
-This script provides the following functions to the dashboard,
-hence creating a link between the codebase and the dashboard:
+#############
+## Imports ##
+#############
 
-- Creating a selection of the most recent ICTU signals.
-- Loading a pre-trained prediction model.
-- Performing inference on a list of ICTU signals, using a loaded pre-trained model.
-
-Written by Swaan Dekkers & Thomas Jongstra
-"""
-
-# Import public modules.
 import pickle
 import copy
 import sys
@@ -26,10 +29,13 @@ sys.path.append(PARENT_PATH)
 sys.path.append(CODEBASE_PATH)
 
 # Import own modules.
-from datasets_oo import *
+from datasets import *
 
 
-#######################################################
+################################
+## Dashboard helper functions ##
+################################
+
 def load_data():
     """Load the final pre-processed and enriched version of the zaken dataset."""
     zakenDataset = ZakenDataset()
@@ -45,7 +51,6 @@ def load_pre_trained_model():
     model_path = os.path.join(os.path.join(PARENT_PATH, 'data'), 'best_random_forest_classifier_temp.pickle')
     model = pickle.load(open(model_path, "rb"))
     return model
-
 
 
 def get_recent_signals(zakenDataset, n=100):

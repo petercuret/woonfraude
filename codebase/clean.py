@@ -1,46 +1,99 @@
-"""
-clean.py
+####################################################################################################
+# clean.py                                                                                         #
+#                                                                                                  #
+# This script implements functions to download BWV data from the wonen servers, to clean           #
+# this data, and to categorize it.                                                                 #
+#                                                                                                  #
+# Download:                                                                                        #
+#     - Download any tables in the bwv set.                                                        #
+#                                                                                                  #
+# Cleaning:spaces                                                                                  #
+#     - Removing entries with incorrect dates                                                      #
+#     - Transforming column data to the correct type                                               #
+#                                                                                                  #
+# Output: Cleaned and categorized/labeled BWV data                                                 #
+#         - ~48k adresses                                                                          #
+#         - ~67k zaken                                                                             #
+#         - ~150k stadia                                                                           #
+#                                                                                                  #
+# Written by Swaan Dekkers & Thomas Jongstra                                                       #
+####################################################################################################
 
-This script implements functions to download BWV data from the wonen servers, to clean this data,
-and to categorize it.
+#############
+## Imports ##
+#############
 
-Download:
-    - Download any tables in the bwv set.
-
-Cleaning:
-    - Removing entries with incorrect dates
-    - Transforming column data to the correct type
-
-Output: Cleaned and categorized/labeled BWV data
-        - ~48k adresses
-        - ~67k zaken
-        - ~150k stadia
-
-Written by Swaan Dekkers & Thomas Jongstra
-"""
-
-
-# Import statements
+from sklearn.base import BaseEstimator, TransformerMixin
 from pathlib import Path
 import pandas as pd
 import time
 import re
 
-# Import own modules
-import core
 
-# Turn off pandas chained assignment warnings.
-pd.options.mode.chained_assignment = None  # default='warn'
+#######################
+## Clean Transformer ##
+#######################
+
+class CleanTransformer(BaseEstimator, TransformerMixin):
+    """Class for performing cleaning steps on dataframes within the sklearn pipeline."""
+
+    def __init__(self,
+                 id_column = None,
+                 drop_duplicates: bool = True,
+                 drop_columns: list = [],  # Contains list of columns to drop.
+                 fix_date_columns: list = [],  # Contains list of date columns to fix.
+                 clean_dates: bool = False,
+                 lower_string_columns = True,  # Contains list of columns to lower strings in. If True, all string columns are lowered.
+                 impute_missing_values: bool = True,  # Impute missing values in all numeric and timestamp columns using averages.
+                 impute_missing_values_mode: list = [],  # Impute missing values for a list of specific columns using the mode.
+                 impute_missing_values_custom: dict = {},  # impute missing values of each column defined in the key, with the value corresponding to the key.
+                 fillna_columns: dict = {},  # Contains the following key-value pairs: key=column_name, value=value_to_be_imputed.
+                ):
+        self.id_column = id_column
+        self.drop_duplicates = drop_duplicates
+        self.drop_columns = drop_columns
+        self.fix_date_columns = fix_date_columns
+        self.clean_dates = clean_dates
+        self.lower_string_columns = lower_string_columns
+        self.impute_missing_values = impute_missing_values
+        self.impute_missing_values_mode = impute_missing_values_mode
+        self.impute_missing_values_custom = impute_missing_values_custom
+        self.fillna_columns = fillna_columns
 
 
-def lower_strings(df, cols=None):
-    """Convert all strings in given columns to lowercase. Type remains Object (Pandas standard)."""
-    if cols == None:  # By default, select all eligible columns perform string-lowering on.
-        cols = df.columns
-        cols = [col for col in cols if df[col].dtype == object]
-    for col in cols:
-        df[col] = df[col].str.lower()
-    print("Lowered strings of cols %s in df %s!" % (cols, df.name))
+    def fit(self, X, y=None):
+        return self
+
+
+    def transform(self, X):
+        if self.drop_duplicates and self.id_column:
+            drop_duplicates(X, self.id_column)
+        if len(self.drop_columns) > 0:
+            X.drop(columns=self.drop_columns, inplace=True)
+        if len(self.fix_date_columns) > 0:
+            fix_dates(X, self.fix_date_columns)
+        if self.clean_dates:
+            clean_dates(X)
+        if self.lower_string_columns:
+            lower_strings(X)
+        if self.impute_missing_values:
+            impute_missing_values(X)
+        if len(self.impute_missing_values_mode) > 0:
+            impute_missing_values_mode(X, self.impute_missing_values_mode)
+        if len(self.impute_missing_values_custom) > 0:
+            impute_missing_values_custom(X, self.impute_missing_values_custom)
+        if len(self.fillna_columns) > 0:
+            X.fillna(value=self.fillna_columns)
+        return X
+
+
+def drop_duplicates(df, cols):
+    """Drop duplicates in dataframe based on given column values. Print results in terminal."""
+    before = df.shape[0]
+    df.drop_duplicates(subset = cols)
+    after = df.shape[0]
+    duplicates = before - after
+    print(f"Dataframe \"%s\": Dropped %s duplicates!" % (df.name, duplicates))
 
 
 def fix_dates(df, cols):
@@ -68,41 +121,14 @@ def clean_dates(df):
     print(f"Dataframe \"%s\": Cleaned out %s dates!" % (df.name, removed))
 
 
-def drop_duplicates(df, cols):
-    """Drop duplicates in dataframe based on given column values. Print results in terminal."""
-    before = df.shape[0]
-    df.drop_duplicates(subset = cols)
-    after = df.shape[0]
-    duplicates = before - after
-    print(f"Dataframe \"%s\": Dropped %s duplicates!" % (df.name, duplicates))
-
-
-def add_column(df, new_col, match_col, csv_path, key='lcolumn', val='ncolumn'):
-    """Add a new column to dataframe based on the match_column, and the mapping in the csv.
-
-    df: dataframe to be augmented.
-    new_col: name of new dataframe column.
-    match_col: colum to match with the csv variable 'key'.
-    csv_path: path to the csv file which is used for augmentation.
-    key: name of column in csv file containing keys.
-    val: name of column in csv file containing values.
-    """
-
-    # Load csv file.
-    df_label = pd.read_csv(csv_path)
-
-    # Transform csv string data to lowercase.
-    df_label[key] = df_label[key].str.lower()
-    df_label[val] = df_label[val].str.lower()
-
-    # Create a dict mapping: key -> val, based on the csv data.
-    label_dict = dict(zip(df_label[key], df_label[val]))
-
-    # Create a new dataframe column. If match_col matches with 'key', set the value to 'val'.
-    df[new_col] = df[match_col].apply(lambda x: label_dict.get(x))
-
-    # Print information about performed operation to terminal.
-    print(f"Dataframe \"%s\": added column \"%s\"!" % (df.name, new_col))
+def lower_strings(df, cols=True):
+    """Convert all strings in given columns to lowercase. Type remains Object (Pandas standard)."""
+    if cols == True:  # By default, select all eligible columns perform string-lowering on.
+        cols = df.columns
+        cols = [col for col in cols if df[col].dtype == object]
+    for col in cols:
+        df[col] = df[col].str.lower()
+    print("Lowered strings of cols %s in df %s!" % (cols, df.name))
 
 
 def impute_missing_values(df):
@@ -124,6 +150,7 @@ def impute_missing_values(df):
 
     # Impute missing values by using the column averages.
     df.fillna(value=averages, inplace=True)
+    print("Missing values in df %s have been imputed!" % (df.name))
 
 
 def impute_missing_values_mode(df, cols):
@@ -139,126 +166,10 @@ def impute_missing_values_mode(df, cols):
 
     # Impute missing values by using the columns modes.
     df.fillna(value=modes, inplace=True)
+    print("Missing values (using mode) of cols %s in df %s have been imputed!" % (cols, df.name))
 
 
-def select_closed_cases(adres, zaken, stadia):
-    """Only select cases (zaken) that have 100% certainly been closed."""
-
-    # Select closed zoeklicht cases.
-    zaken['mask'] = zaken.afs_oms == 'zl woning is beschikbaar gekomen'
-    zaken['mask'] += zaken.afs_oms == 'zl geen woonfraude'
-    zl_zaken = zaken.loc[zaken['mask']]
-
-
-    # Indicate which stadia are indicative of closed cases.
-    stadia['mask'] = stadia.sta_oms == 'rapport naar han'
-    stadia['mask'] += stadia.sta_oms == 'bd naar han'
-
-    # Indicate which stadia are from before 2013. Cases linked to these stadia should be
-    # disregarded. Before 2013, 'rapport naar han' and 'bd naar han' were used inconsistently.
-    timestamp_2013 =  pd.Timestamp('2013-01-01')
-    stadia['before_2013'] = stadia.begindatum < timestamp_2013
-
-    # Create groups linking cases to their stadia.
-    zaak_groups = stadia.groupby('zaak_id').groups
-
-    # Select all closed cases based on "rapport naar han" and "bd naar han" stadia.
-    keep_ids = []
-    for zaak_id, stadia_ids in zaak_groups.items():
-        zaak_stadia = stadia.loc[stadia_ids]
-        if sum(zaak_stadia['mask']) >= 1 and sum(zaak_stadia['before_2013']) == 0:
-            keep_ids.append(zaak_id)
-    rap_zaken = zaken[zaken.zaak_id.isin(keep_ids)]
-
-    # Combine all selected cases.
-    selected_zaken = pd.concat([zl_zaken, rap_zaken], sort=True)
-
-    # Remove temporary mask
-    selected_zaken.drop(columns=['mask'], inplace=True)
-
-    # Print results.
-    print(f'Selected {len(selected_zaken)} closed cases from a total of {len(zaken)} cases.')
-
-    # Only return the relevant selection of cases.
-    return selected_zaken
-
-
-def filter_categories(zaken):
-    """
-    Remove cases (zaken) with categories 'woningkwaliteit' or 'afdeling vergunninen beheer'.
-
-    These cases do not contain reliable samples.
-    """
-    filtered_zaken = zaken[~zaken.categorie.isin(['woningkwaliteit', 'afdeling vergunningen en beheer'])]
-    return filtered_zaken
-
-
-def add_binary_label_zaken(zaken, stadia):
-    """Create a binary label defining whether there was woonfraude."""
-
-    # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
-    zaken['woonfraude'] = False # Set default value to false
-    zaken_mask = zaken.loc[zaken['afs_oms'].str.contains('zl woning is beschikbaar gekomen',
-                                                         regex=True, flags=re.IGNORECASE) == True]
-    stadia_mask = stadia.loc[stadia['sta_oms'].str.contains('rapport naar han', regex=True,
-                                                            flags=re.IGNORECASE) == True]
-    zaken_ids_zaken = zaken_mask['zaak_id'].tolist()
-    zaken_ids_stadia = stadia_mask['zaak_id'].tolist()
-    zaken_ids = list(set(zaken_ids_zaken + zaken_ids_stadia))  # Get uniques
-    zaken.loc[zaken['zaak_id'].isin(zaken_ids), 'woonfraude'] = True  # Add woonfraude label
-
-    # Add woonfraude class labels.
-    # zaken.loc[zaken['zaak_id'].isin(zaken_ids_zaken), 'woonfraude'] = 'zoeklicht'
-    # zaken.loc[zaken['zaak_id'].isin(zaken_ids_stadia), 'woonfraude'] = 'rapport_handhaving'
-
-    # Print results
-    print(f"Dataframe \"zaken\": added column \"woonfraude\" (binary label)")
-
-
-def fix_dfs(adres, zaken, stadia, personen, bag):
-    """Fix adres, zaken en stadia dataframes."""
-
-    # Get path to home directory
-    home = str(Path.home())
-
-    # Adres
-    drop_duplicates(adres, "adres_id")
-    fix_dates(adres, ['hvv_dag_tek', 'max_vestig_dtm', 'wzs_update_datumtijd'])
-    lower_strings(adres)
-    impute_missing_values(adres)
-
-    # Zaken
-    drop_duplicates(zaken, "zaak_id")
-    fix_dates(zaken, ['begindatum','einddatum', 'wzs_update_datumtijd'])
-    clean_dates(zaken)
-    lower_strings(zaken)  # This needs to be done before add_column (we match lowercase strings)
-    add_column(df=zaken, new_col='categorie', match_col='beh_oms',
-               csv_path=f'{home}/Documents/woonfraude/data/aanvulling_beh_oms.csv')
-    impute_missing_values(zaken)
-
-    # Stadia
-    fix_dates(stadia, ['begindatum', 'peildatum', 'einddatum', 'date_created',
-                      'date_modified', 'wzs_update_datumtijd'])
-    clean_dates(stadia)
-    stadia['zaak_id'] = stadia['adres_id'].astype(int).astype(str) + '_' + stadia['wvs_nr'].astype(int).astype(str)
-    stadia['stadium_id'] = stadia['zaak_id'] + '_' + stadia['sta_nr'].astype(int).astype(str)
-    drop_duplicates(stadia, "stadium_id")
-    lower_strings(stadia) # This needs to be done before add_column (we match lowercase strings)
-    add_column(df=stadia, new_col='label', match_col='sta_oms',
-               csv_path=f'{home}/Documents/woonfraude/data/aanvulling_sta_oms.csv')
-    impute_missing_values(stadia)
-
-    # Personen
-    personen.drop_duplicates(subset='id', inplace=True)  # Remove duplicate persons.
-
-    # BAG
-    fix_dates(bag, ['begin_geldigheid@bag', 'date_modified@bag'])
-    impute_missing_values(bag)
-    impute_missing_values_mode(bag, ['status_coordinaat_code@bag', 'indicatie_geconstateerd@bag', 'indicatie_in_onderzoek@bag', 'woningvoorraad@bag'])
-    bag.fillna(value={'type_woonobject_omschrijving': 'None',
-                      'eigendomsverhouding_id@bag': 'None',
-                      'financieringswijze_id@bag': -1,
-                      'gebruik_id@bag': -1,
-                      'reden_opvoer_id@bag': -1,
-                      'status_id@bag': -1,
-                      'toegang_id@bag': 'None'}, inplace=True)
+def impute_missing_values_custom(df, col_dict):
+    """Impute the missing values of each column defined in the dict keys, with the corresponding dict value."""
+    df.fillna(value=col_dict, inplace=True)
+    print("Missing values (using custom strategy) of cols %s in df %s have been imputed!" % (str(list(col_dict.keys())), df.name))

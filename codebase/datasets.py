@@ -1,12 +1,15 @@
-"""
-datasets_oo.py
+####################################################################################################
+# datasets.py                                                                                      #
+#                                                                                                  #
+# This code implements dataset-specific downloading, saving and data-transformation operations.    #
+#                                                                                                  #
+# Written by Swaan Dekkers & Thomas Jongstra                                                       #
+####################################################################################################
 
-This code implements dataset-specific downloading, saving and data-transformation operations.
+#############
+## Imports ##
+#############
 
-Written by Swaan Dekkers & Thomas Jongstra
-"""
-
-# Import statements
 from pathlib import Path
 import pandas.io.sql as sqlio
 import pandas as pd
@@ -16,10 +19,9 @@ import psycopg2
 import time
 import os
 import re
-# from torch.utils.data import Dataset
 
-# Import own modules
-import config, clean_oo
+# Import own modules.
+import config, clean
 
 # Define HOME and DATA_PATH on a global level.
 HOME = Path.home()  # Home path for old VAO.
@@ -27,10 +29,10 @@ HOME = Path.home()  # Home path for old VAO.
 # HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
 DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
 
-# Old VAO code.
-# HOME = Path.home()
-# DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
 
+###################
+## Dataset class ##
+###################
 
 class MyDataset():
     """
@@ -320,12 +322,9 @@ class AdresDataset(MyDataset):
         today = pd.to_datetime('today')
         # Set all dates within range allowed by Pandas (584 years?)
         personen['geboortedatum'] = pd.to_datetime(personen['geboortedatum'], errors='coerce')
+
+
         # Get the most frequent birthdate (mode).
-
-
-        ###### TODO: CHECKEN WAAROM personen['geboortedatum'] ALLEEN MAAR NaT VALUES BEVAT!
-        ######       ER LIJKT IETS MIS TE GAAN MET DE VOORVERWERKING :(
-
         geboortedatum_mode = personen['geboortedatum'].mode()[0]
         # Compute the age (result is a TimeDelta).
         personen['leeftijd'] = today - personen['geboortedatum']
