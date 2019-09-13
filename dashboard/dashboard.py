@@ -59,7 +59,7 @@ import dashboard_helper
 
 # Try to create a list of 100 meldingen from the data.
 try:
-    df = dashboard_link.process_recent_signals()
+    df = dashboard_helper.process_recent_signals()
     print('Succesfully created prediction for recent signals.')
 except:
     df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
