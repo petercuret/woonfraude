@@ -284,8 +284,8 @@ class AdresDataset(MyDataset):
 
     def impute_values_for_bagless_addresses(self, adres):
         """Impute values for adresses where no BAG-match could be found."""
-        clean_oo.impute_missing_values(adres)
-        # clean_oo.impute_missing_values_mode(adres, ['status_coordinaat_code@bag'])
+        clean.impute_missing_values(adres)
+        # clean.impute_missing_values_mode(adres, ['status_coordinaat_code@bag'])
         adres.fillna(value={'huisnummer_nummeraanduiding': 0,
                             'huisletter_nummeraanduiding': 'None',
                             '_openbare_ruimte_naam_nummeraanduiding': 'None',
@@ -468,7 +468,7 @@ class ZakenDataset(MyDataset):
 
     def add_categories(self):
         """Add categories to the zaken dataframe."""
-        clean_oo.lower_strings(self.data)
+        clean.lower_strings(self.data)
         add_column(df=self.data, new_col='categorie', match_col='beh_oms',
                    csv_path=os.path.join(HOME, 'Documents/woonfraude/data/aanvulling_beh_oms.csv'))
         self.version += '_categories'
@@ -572,7 +572,7 @@ class StadiaDataset(MyDataset):
 
     def add_labels(self):
         """Add labels to the zaken dataframe."""
-        clean_oo.lower_strings(self.data)
+        clean.lower_strings(self.data)
         add_column(df=self.data, new_col='label', match_col='sta_oms',
                    csv_path=os.path.join(HOME, 'Documents/woonfraude/data/aanvulling_sta_oms.csv'))
         self.version += '_labels'
