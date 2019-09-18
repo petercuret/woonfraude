@@ -71,7 +71,7 @@ Nu zou je klaar moeten zijn om met dit pakket te werken.
 #### Je kunt nu zelf deze noteobok aanpassen voor je eigen analyse/onderzoeksvraag. Start hiervoor Jupyter Lab op:
     jupyter lab
 
-Navigeer nu naar je eigen notebook (mijn_notebook.ipynb) en ga aan de slag!
+Navigeer nu naar je eigen notebook (notebooks_prive/mijn_notebook.ipynb) en ga aan de slag!
 
 #### Om de volledige voorgebouwde machine learning straat door te lopen kun je ook de master notebook (notebooks/master.ipynb) kopieren naar je eigen notebooks_prive folder:
     cp notebooks/master.ipynb notebooks_prive/master.ipynb
