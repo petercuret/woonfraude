@@ -15,6 +15,9 @@
 ## Imports ##
 #############
 
+from sqlalchemy import create_engine
+import papermill as pm
+import datetime
 import pickle
 import copy
 import sys
@@ -25,8 +28,10 @@ SCRIPT_PATH = os.path.abspath(__file__)
 SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
 PARENT_PATH = os.path.abspath(os.path.join(SCRIPT_DIR, os.path.pardir))
 CODEBASE_PATH = os.path.abspath(os.path.join(PARENT_PATH, 'codebase'))
+NOTEBOOK_PATH = os.path.abspath(os.path.join(PARENT_PATH, 'notebooks'))
 sys.path.append(PARENT_PATH)
 sys.path.append(CODEBASE_PATH)
+sys.path.append(NOTEBOOK_PATH)
 
 # Import own modules.
 from datasets import *
@@ -85,3 +90,53 @@ def process_recent_signals():
     recent_signals['woonfraude'] = predictions
     recent_signals['fraude_kans'] = recent_signals['woonfraude'].astype(int)  # Temporarily create a fraude_kans column to be compatible with the dashboard.
     return recent_signals
+
+
+
+def process_for_tableau():
+    """
+    !!! TEMPORARY SOLUTION FOR PILOT !!!
+
+    Create a list of prediction values for ALL data points, and write the results to a databsae.
+    Tableau will be able to look at the results in this database. However, only a small selection
+    of the data points will be used by Tableau (the open cases).
+
+    The predictions for already closed cases are not needed (and since the model is trained
+    on these cases, the predictions might make the model look better than it actually is).
+    Nevertheless, since it is hard to make a selection of all open cases beforehand,
+    and since Tableau only uses the prediction values of the open cases, we made the
+    (quick-and-dirty) decision to temporarily generate predictions for ALL cases,
+    so we can start with pilot :)
+    """
+
+    # Create a folder structure for the papermill output.
+    now = datetime.datetime.now()
+    day_string = f'{str(now)[0:10]}'
+    output_folder = os.path.abspath(os.path.join('NOTEBOOK_PATH', 'papermill_output'))
+    output_folder_run = os.path.abspat(os.path.join(output_folder, day_string)
+    if not Path(output_folder).exists():
+        os.mkdir(f'{output_folder}')
+    if not Path(output_folder_run).exists():
+        os.mkdir(f'{output_folder_run}')
+
+    # Run data preparation step (master_prepare.ipynb) using Papermill.
+    _ = pm.execute_notebook(os.path.abspath(os.path.join('NOTEBOOK_PATH', 'master_prepare.ipynb'),
+                            f'{output_folder_run}/master_prepare - output.ipynb')
+
+    # Load data & model, and create predictions.
+    zakenDataset = load_data()
+    model = load_pre_trained_model()
+    predictions = create_signals_predictions(model, zakenDataset.data)
+
+
+    # Convert predictions to a model fitting the database.
+    # predictions_tableau = predictions[['id', 'woonfraude']]
+
+
+    # Create a database engine.
+    # engine = create_engine(f'postgresql+psycopg2://{config.user}:{config.password}@{config.host}:{config.port}/{config.database}')
+
+
+    # Commit predictions to the database, to be used by Tableau.
+    # predictions_tableau.to_sql('current', engine, schema='woonfraude', index=False, if_exists='replace')
+    # predictions_tableau.to_sql('history', engine, schema='woonfraude', index=False, if_exists='append')
