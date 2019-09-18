@@ -31,6 +31,13 @@ sqlalchemy
 papermill
 
 
+#############
+# Notebooks #
+#############
+
+jupyter
+
+
 ###########################
 # New Research (Felicien) #
 ###########################
