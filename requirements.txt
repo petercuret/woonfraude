@@ -27,6 +27,8 @@ dash-core-components
 dash-html-components
 urllib
 plotly
+sqlalchemy
+papermill
 
 
 ###########################
