@@ -60,7 +60,7 @@ Direct in de root van de repository zitten ook enkele bestanden:
 Nu zou je klaar moeten zijn om met dit pakket te werken.
 
 
-## Pakkket Werking
+## Pakket Werking
 
 #### Om zelf een model te trainen om een analyse te doen, kun je een persoonlijke folder aanmaken voor je eigen notebooks:
     mkdir notebooks_prive
