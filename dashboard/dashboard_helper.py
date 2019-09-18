@@ -36,6 +36,8 @@ sys.path.append(NOTEBOOK_PATH)
 # Import own modules.
 from datasets import *
 
+# Import config file.
+import config
 
 ################################
 ## Dashboard helper functions ##
@@ -127,16 +129,16 @@ def process_for_tableau():
     zakenDataset = load_data()
     model = load_pre_trained_model()
     predictions = create_signals_predictions(model, zakenDataset.data)
-
+    zakenDataset.data['woonfraude'] = predictions
 
     # Convert predictions to a model fitting the database.
-    # predictions_tableau = predictions[['id', 'woonfraude']]
-
+    zakenDataset.data['wvs_nr'] = zakenDataset.zaak_id.apply(lambda x: x.split('_')[1])
+    zakenDataset.data.rename({'woonfraude': 'fraud_prediction'})
+    predictions_tableau =  zakenDataset.data[['adres_id', 'wvs_nr', 'fraud_prediction']]
 
     # Create a database engine.
     # engine = create_engine(f'postgresql+psycopg2://{config.user}:{config.password}@{config.host}:{config.port}/{config.database}')
 
-
     # Commit predictions to the database, to be used by Tableau.
-    # predictions_tableau.to_sql('current', engine, schema='woonfraude', index=False, if_exists='replace')
-    # predictions_tableau.to_sql('history', engine, schema='woonfraude', index=False, if_exists='append')
+    # predictions_tableau.to_sql('bwv_jasmine', engine, schema='rve_wonen', index=False, if_exists='replace')
+    # predictions_tableau.to_sql('bwv_jasmine_history', engine, schema='rve_wonen', index=False, if_exists='append')
