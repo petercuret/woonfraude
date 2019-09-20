@@ -1,22 +1,11 @@
 ####################################################################################################
-# clean.py                                                                                         #
-#                                                                                                  #
-# This script implements functions to download BWV data from the wonen servers, to clean           #
-# this data, and to categorize it.                                                                 #
-#                                                                                                  #
-# Download:                                                                                        #
-#     - Download any tables in the bwv set.                                                        #
-#                                                                                                  #
-# Cleaning:spaces                                                                                  #
-#     - Removing entries with incorrect dates                                                      #
-#     - Transforming column data to the correct type                                               #
-#                                                                                                  #
-# Output: Cleaned and categorized/labeled BWV data                                                 #
-#         - ~48k adresses                                                                          #
-#         - ~67k zaken                                                                             #
-#         - ~150k stadia                                                                           #
-#                                                                                                  #
-# Written by Swaan Dekkers & Thomas Jongstra                                                       #
+"""
+clean.py
+
+This module implements a transformer class which implements multiple methods to clean up a dataset.
+
+Written by Swaan Dekkers & Thomas Jongstra
+"""
 ####################################################################################################
 
 #############

@@ -1,14 +1,15 @@
 ####################################################################################################
-# dashboard_helper.py                                                                              #
-#                                                                                                  #
-# This script provides the following functions to the dashboard,                                   #
-# hence creating a link between the codebase and the dashboard:                                    #
-#                                                                                                  #
-# - Creating a selection of the most recent ICTU signals.                                          #
-# - Loading a pre-trained prediction model.                                                        #
-# - Performing inference on a list of ICTU signals, using a loaded pre-trained model.              #
-#                                                                                                  #
-# Written by Swaan Dekkers & Thomas Jongstra                                                       #
+"""
+dashboard_helper.py
+
+This script provides the following functions, which can be used when implementing a dashboard:
+
+- Creating a selection of the most recent housing fraud signals.
+- Loading a pre-trained prediction model.
+- Performing inference on a list of housing fraud signals, using a pre-trained ML model.
+
+Written by Swaan Dekkers & Thomas Jongstra
+"""
 ####################################################################################################
 
 #############
@@ -38,6 +39,7 @@ from datasets import *
 
 # Import config file.
 import config
+
 
 ################################
 ## Dashboard helper functions ##

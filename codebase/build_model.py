@@ -1,17 +1,19 @@
+####################################################################################################
 """
 build_model.py
 
-This script takes the extracted BWV features and builds a prediction model.
-
-Input: extracted BWV features.
-Output: prediction model for prediction social housing rental fraud.
+This module implements methods to cut up a dataset into train and test set.
+It also implements functions to easily train several types of sklearn machine learning models.
 
 Written by Swaan Dekkers & Thomas Jongstra
 """
+####################################################################################################
 
-# Source this script from collect_data_and_make_model.ipynb.
 
-# General imports
+#############
+## Imports ##
+#############
+
 import os, sys
 import numpy as np
 import pandas as pd
@@ -39,10 +41,12 @@ from imblearn.metrics import classification_report_imbalanced
 
 
 def split_data_train_dev_test(df):
-    # Creating sets for model building and testing
-    # 1. Training set (70%) - for building the model
-    # 2. Development set a.k.a. hold-out set (15%) - for optimizing model parameters
-    # 3. Test set (15%) - For testing the performance of the tuned model
+    """
+    Creating sets for model building and testing. Steps:
+    1. Training set (70%) - for building the model
+    2. Development set a.k.a. hold-out set (15%) - for optimizing model parameters
+    3. Test set (15%) - For testing the performance of the tuned model
+    """
 
     # Split data into features (X) and labels (y).
     X = df.drop('woonfraude', axis=1)
@@ -62,9 +66,11 @@ def split_data_train_dev_test(df):
 
 
 def split_data_train_test(df):
-    # Creating sets for model building and testing
-    # 1. Training set (85%) - for use with cross-validations
-    # 2. Test set (15%) - For possibly testing the performance of any tuned models
+    """
+    Creating sets for model building and testing. Steps:
+    1. Training set (85%) - for use with cross-validations
+    2. Test set (15%) - For possibly testing the performance of any tuned models
+    """
 
     # Split data into features (X) and labels (y).
     X = df.drop('woonfraude', axis=1)
