@@ -109,3 +109,18 @@ class ZakenDataset(datasets.MyDataset):
         self.data = finished_cases
         self.version += '_finishedCases'
         self.save()
+
+
+    def add_binary_label_zaken(self, stadia):
+        """Create a binary label defining whether there was woonfraude."""
+
+        # Only set "woonfraude" label to True when the zaken_mask and/or stadia_mask is True.
+        self.data['woonfraude'] = False # Set default value to false
+        zaken_mask = self.data.loc[self.data['afs_oms'].str.contains('zl woning is beschikbaar gekomen',
+                                                             regex=True, flags=re.IGNORECASE) == True]
+        stadia_mask = stadia.loc[stadia['sta_oms'].str.contains('rapport naar han', regex=True,
+                                                                flags=re.IGNORECASE) == True]
+        zaken_ids_zaken = zaken_mask['zaak_id'].tolist()
+        zaken_ids_stadia = stadia_mask['zaak_id'].tolist()
+        zaken_ids = list(set(zaken_ids_zaken + zaken_ids_stadia))  # Get uniques
+        self.data.loc[self.data['zaak_id'].isin(zaken_ids), 'woonfraude'] = True  # Add woonfraude label
