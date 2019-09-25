@@ -24,7 +24,7 @@ import os
 import re
 
 # Import own modules.
-import datasets
+import datasets, clean
 
 # Define HOME and DATA_PATH on a global level.
 HOME = Path.home()  # Home path for old VAO.
