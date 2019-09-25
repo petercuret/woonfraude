@@ -55,7 +55,7 @@ class AdresDataset(datasets.MyDataset):
 
     def enrich_with_woning_id(self):
         """Add woning ids to the adres dataframe."""
-        adres_periodes = download_dataset('bwv_adres_periodes', 'bwv_adres_periodes')
+        adres_periodes = datasets.download_dataset('bwv_adres_periodes', 'bwv_adres_periodes')
         self.data = self.data.merge(adres_periodes[['ads_id', 'wng_id']], how='left', left_on='adres_id', right_on='ads_id')
         self.version += '_woningId'
         self.save()
