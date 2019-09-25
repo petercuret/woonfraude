@@ -49,7 +49,7 @@ class ZakenDataset(datasets.MyDataset):
     def add_categories(self):
         """Add categories to the zaken dataframe."""
         clean.lower_strings(self.data)
-        add_column(df=self.data, new_col='categorie', match_col='beh_oms',
+        datasets.add_column(df=self.data, new_col='categorie', match_col='beh_oms',
                    csv_path=os.path.join(HOME, 'Documents/woonfraude/data/aanvulling_beh_oms.csv'))
         self.version += '_categories'
         self.save()
