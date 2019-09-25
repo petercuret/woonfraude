@@ -1,23 +1,25 @@
 ####################################################################################################
-# dashboard.py                                                                                    #
-#                                                                                                  #
-# This script implements a dashboard-applicatiom for the efficient planning of the municipal       #
-# enforcement process, based on housing fraud signals, within the municipality of Amsterdam.       #
-#                                                                                                  #
-# Thomas Jongstra & Swaan Dekkers 2019                                                             #
-#                                                                                                  #
-#                                                                                                  #
-# Basic intro on working with Dash: https://dash.plot.ly/getting-started                           #
-#                                                                                                  #
-# Example dashboards using maps in Dash (from dash-gallery.plotly.host/Portal):                    #
-# github.com/plotly/dash-sample-apps/blob/master/apps/dash-oil-and-gas/app.py                      #
-# github.com/plotly/dash-oil-gas-ternary                                                           #
-#                                                                                                  #
-# This dashboard took some inspiration from this video:                                            #
-# https://www.youtube.com/watch?v=lu0PtsMor4E                                                      #
-#                                                                                                  #
-# Inspiration has also been taken from the corresponding codebase:                                 #
-# https://github.com/amyoshino/Dash_Tutorial_Series (careful: this repo seems full of errors!!)    #
+"""
+dashboard.py
+
+This script implements a dashboard-application for the efficient planning of the municipal
+enforcement process, based on housing fraud signals, within the municipality of Amsterdam.
+
+Thomas Jongstra & Swaan Dekkers 2019
+
+
+Basic intro on working with Dash: https://dash.plot.ly/getting-started
+
+Example dashboards using maps in Dash (from dash-gallery.plotly.host/Portal):
+github.com/plotly/dash-sample-apps/blob/master/apps/dash-oil-and-gas/app.py
+github.com/plotly/dash-oil-gas-ternary
+
+This dashboard took some inspiration from this video:
+https://www.youtube.com/watch?v=lu0PtsMor4E
+
+Inspiration has also been taken from the corresponding codebase:
+https://github.com/amyoshino/Dash_Tutorial_Series (careful: this repo seems to be full of errors!!)
+"""
 ####################################################################################################
 
 #############
