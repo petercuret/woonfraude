@@ -13,8 +13,9 @@
 sklearn
 imblearn
 numpy
-pandas
+pandas==0.24.2
 psycopg2
+tables
 requests
 
 
