@@ -46,7 +46,7 @@ import config
 def load_data():
     """Load the final pre-processed and enriched version of the zaken dataset."""
     zakenDataset = ZakenDataset()
-    zakenDataset.load('final')
+    zakenDataset.load('final_all_cases')
     return zakenDataset
 
 
@@ -121,18 +121,18 @@ def process_for_tableau():
     """
 
     # Create a folder structure for the papermill output.
-    # now = datetime.datetime.now()
-    # day_string = f'{str(now)[0:10]}'
-    # output_folder = os.path.abspath(os.path.join('NOTEBOOK_PATH', 'papermill_output'))
-    # output_folder_run = os.path.abspat(os.path.join(output_folder, day_string)
-    # if not Path(output_folder).exists():
-    #     os.mkdir(f'{output_folder}')
-    # if not Path(output_folder_run).exists():
-    #     os.mkdir(f'{output_folder_run}')
+    now = datetime.datetime.now()
+    day_string = f'{str(now)[0:10]}'
+    output_folder = os.path.abspath(os.path.join(NOTEBOOK_PATH, 'papermill_output'))
+    output_folder_run = os.path.abspath(os.path.join(output_folder, day_string))
+    if not Path(output_folder).exists():
+        os.mkdir(f'{output_folder}')
+    if not Path(output_folder_run).exists():
+        os.mkdir(f'{output_folder_run}')
 
-    # # Run data preparation step (master_prepare.ipynb) using Papermill.
-    # _ = pm.execute_notebook(os.path.abspath(os.path.join('NOTEBOOK_PATH', 'master_prepare_tableau.ipynb'),
-    #                         f'{output_folder_run}/master_prepare - output.ipynb')
+    # Run data preparation step (master_prepare.ipynb) using Papermill.
+    _ = pm.execute_notebook(os.path.abspath(os.path.join(NOTEBOOK_PATH, 'master_prepare_tableau.ipynb')),
+                            f'{output_folder_run}/master_prepare - output.ipynb')
 
     # Load data & model.
     zakenDataset = load_data()
@@ -147,8 +147,8 @@ def process_for_tableau():
     zakenDataset.data['woonfraude'] = predictions
 
     # Convert predictions to a model fitting the database.
-    zakenDataset.data['wvs_nr'] = zakenDataset.zaak_id.apply(lambda x: x.split('_')[1])
-    zakenDataset.data.rename({'woonfraude': 'fraud_prediction'})
+    zakenDataset.data['wvs_nr'] = zakenDataset.data.zaak_id.apply(lambda x: x.split('_')[1])
+    zakenDataset.data.rename(columns={'woonfraude': 'fraud_prediction'}, inplace=True)
     predictions_tableau =  zakenDataset.data[['adres_id', 'wvs_nr', 'fraud_prediction']]
 
     # Create a database engine.

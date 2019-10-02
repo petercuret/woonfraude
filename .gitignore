@@ -10,3 +10,4 @@ data/
 dashboard/config.py
 dashboard/__pyache__/
 dashboard/.ipynb_checkpoints/
+notebooks/papermill_output/
