@@ -27,10 +27,8 @@ import re
 import datasets
 
 # Define HOME and DATA_PATH on a global level.
-HOME = Path.home()  # Home path for old VAO.
-# USERNAME = os.path.basename(HOME)
-# HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
-DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
+HOME = os.path.abspath('E:\\Jasmine')
+DATA_PATH = os.path.abspath('E:\\Jasmine\\woonfraude\\data')
 
 
 ######################

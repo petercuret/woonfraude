@@ -27,10 +27,8 @@ import re
 import config, clean
 
 # Define HOME and DATA_PATH on a global level.
-HOME = Path.home()  # Home path for old VAO.
-# USERNAME = os.path.basename(HOME)
-# HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
-DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
+HOME = os.path.abspath('E:\\Jasmine')
+DATA_PATH = os.path.abspath('E:\\Jasmine\\woonfraude\\data')
 
 
 ###################
@@ -113,29 +111,21 @@ def download_dataset(dataset_name, table_name, limit=9223372036854775807):
             df = pd.read_csv(res.content)
             return df
 
-        # Create a server connection.
-        # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
-        conn = psycopg2.connect(host = config.HOST,
-                                dbname = config.DB,
-                                user = config.USER,
-                                password = config.PASSWORD)
-        if table_name in ['bag_nummeraanduiding', 'bag_verblijfsobject']:
-            conn = psycopg2.connect(host = config.BAG_HOST,
-                            dbname = config.BAG_DB,
-                            user = config.BAG_USER,
-                            password = config.BAG_PASSWORD)
+        # Create a server connection based on the needed tables. The datasets are available on two different servers.
+        if table_name in ['import_adres', 'import_wvs', 'import_stadia']:
+            conn = psycopg2.connect(host = config.HOST_1,
+                                    dbname = config.DB_1,
+                                    user = config.USER_1,
+                                    password = config.PASSWORD_1)
+
+        if table_name in ['bwv_personen', 'bwv_hotline_melding', 'bwv_adres_periodes']:
+            conn = psycopg2.connect(host = config.HOST_2,
+                                    dbname = config.DB_2,
+                                    user = config.USER_2,
+                                    password = config.PASSWORD_2)
 
         # Create query to download the specific table data from the server.
-        # By default, we assume the table is in ['import_adres', 'import_wvs', 'import_stadia', 'bwv_personen', 'bag_verblijfsobject']
         sql = f"select * from public.{table_name} limit {limit};"
-        if table_name in ['bag_nummeraanduiding']:
-            sql = """
-            SELECT *
-            FROM public.bag_nummeraanduiding
-            FULL JOIN bag_ligplaats ON bag_nummeraanduiding.ligplaats_id = bag_ligplaats.id
-            FULL JOIN bag_standplaats ON bag_nummeraanduiding.standplaats_id = bag_standplaats.id
-            FULL JOIN bag_verblijfsobject ON bag_nummeraanduiding.verblijfsobject_id = bag_verblijfsobject.id;
-            """
 
         # Get data & convert to dataframe.
         df = sqlio.read_sql_query(sql, conn)

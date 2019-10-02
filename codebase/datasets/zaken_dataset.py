@@ -27,10 +27,8 @@ import re
 import clean, datasets
 
 # Define HOME and DATA_PATH on a global level.
-HOME = Path.home()  # Home path for old VAO.
-# USERNAME = os.path.basename(HOME)
-# HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
-DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
+HOME = os.path.abspath('E:\\Jasmine')
+DATA_PATH = os.path.abspath('E:\\Jasmine\\woonfraude\\data')
 
 
 ########################
@@ -50,7 +48,7 @@ class ZakenDataset(datasets.MyDataset):
         """Add categories to the zaken dataframe."""
         clean.lower_strings(self.data)
         datasets.add_column(df=self.data, new_col='categorie', match_col='beh_oms',
-                   csv_path=os.path.join(HOME, 'Documents/woonfraude/data/aanvulling_beh_oms.csv'))
+                   csv_path=os.path.join(HOME, 'woonfraude/data/aanvulling_beh_oms.csv'))
         self.version += '_categories'
         self.save()
 
