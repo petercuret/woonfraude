@@ -29,9 +29,9 @@ https://github.com/amyoshino/Dash_Tutorial_Series (careful: this repo seems to b
 # Load environment variables.
 MAIN_PATH = os.getenv("WOONFRAUDE_PATH")
 DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
-CODEBASE_PATH = os.abspath(os.join(MAIN_PATH, 'codebase'))
-NOTEBOOK_PATH = os.abspath(os.join(MAIN_PATH, 'notebooks'))
-DASHBOARD_PATH = os.abspath(os.join(MAIN_PATH, 'dashboard'))
+CODEBASE_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'codebase'))
+NOTEBOOK_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'notebooks'))
+DASHBOARD_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'dashboard'))
 
 # Add system paths.
 sys.path.insert(1, CODEBASE_PATH)

@@ -16,7 +16,7 @@ Written by Swaan Dekkers & Thomas Jongstra
 # Load environment variables.
 MAIN_PATH = os.getenv("WOONFRAUDE_PATH")
 DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
-CODEBASE_PATH = os.abspath(os.join(MAIN_PATH, 'codebase'))
+CODEBASE_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'codebase'))
 
 # Add system paths.
 sys.path.insert(1, CODEBASE_PATH)
