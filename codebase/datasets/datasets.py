@@ -20,6 +20,7 @@ import numpy as np
 import requests
 import psycopg2
 import time
+import sys
 import os
 import re
 
