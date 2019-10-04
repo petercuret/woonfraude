@@ -51,10 +51,10 @@ import config
 ## Dashboard helper functions ##
 ################################
 
-def load_data():
+def load_data(version):
     """Load the final pre-processed and enriched version of the zaken dataset."""
     zakenDataset = ZakenDataset()
-    zakenDataset.load('final')
+    zakenDataset.load(version)
     return zakenDataset
 
 
@@ -100,7 +100,7 @@ def create_signals_predictions(model, signals):
 
 def process_recent_signals():
     """Create a list of recent signals and their computed fraud predictions."""
-    zakenDataset = load_data()
+    zakenDataset = load_data('final')
     model = load_pre_trained_model()
     recent_signals = get_recent_signals(zakenDataset)
     recent_signals_for_predictions = copy.deepcopy(recent_signals)
@@ -137,11 +137,14 @@ def process_for_tableau():
         os.mkdir(f'{output_folder_run}')
 
     # Run data preparation step (master_prepare.ipynb) using Papermill.
-    _ = pm.execute_notebook(os.path.abspath(os.path.join(NOTEBOOK_PATH, 'master_prepare_tableau.ipynb')),
-                            f'{output_folder_run}/master_prepare - output.ipynb')
+    _ = pm.execute_notebook(os.path.abspath(os.path.join(NOTEBOOK_PATH, 'master_prepare.ipynb')),
+                            f'{output_folder_run}/master_prepare - output.ipynb',
+                            parameters = {FORCE_DOWNLOAD=True,
+                                          FORCE_DATASET_SPECIFIC_PREPROCESSING=True,
+                                          RUN_FOR_TABLEAU=True})
 
     # Load data & model.
-    zakenDataset = load_data()
+    zakenDataset = load_data('final_tableau')
     model = load_pre_trained_model()
 
     # Get list of columns expected by model. Remove any columns in the data that do not match this list.
