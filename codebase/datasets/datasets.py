@@ -238,6 +238,7 @@ def save_dataset(data, dataset_name, version):
 def load_dataset(dataset_name, version):
     """Load a version of the dataframe from file. Rename it (pickling removes name)."""
     dataset_path = os.path.join(DATA_PATH, f'{dataset_name}_{version}.h5')
+    print(f'Trying to load dataset "{dataset_name}" version "{version}" from path "{dataset_path}".')
     data = pd.read_hdf(path_or_buf=dataset_path, key=dataset_name, mode='r')
     data.name = dataset_name # Set the dataframe name again after loading (it is lost when saving).
     return data
