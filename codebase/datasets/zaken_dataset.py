@@ -74,11 +74,9 @@ class ZakenDataset(datasets.MyDataset):
         # Select finished zoeklicht cases.
         zaken['mask'] = zaken.afs_oms == 'zl woning is beschikbaar gekomen'
         zaken['mask'] += zaken.afs_oms == 'zl geen woonfraude'
-        zl_zaken = zaken.loc[zaken['mask']]
 
         # Indicate which stadia are indicative of finished cases.
-        stadia['mask'] = stadia.sta_oms == 'rapport naar han'
-        stadia['mask'] += stadia.sta_oms == 'bd naar han'
+        stadia['mask'] = stadia.sta_oms.isin(['rapport naar han', 'bd naar han'])
 
         # Indicate which stadia are from before 2013. Cases linked to these stadia should be
         # disregarded. Before 2013, 'rapport naar han' and 'bd naar han' were used inconsistently.
@@ -99,7 +97,8 @@ class ZakenDataset(datasets.MyDataset):
         # Combine all finished cases.
         finished_cases = pd.concat([zl_zaken, rap_zaken], sort=True)
 
-        # Remove temporary mask
+        # Remove possible duplicates and temporary mask.
+        finished_cases.drop_duplicates(inplace=True)
         finished_cases.drop(columns=['mask'], inplace=True)
 
         # Print results.
