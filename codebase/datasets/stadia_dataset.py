@@ -52,12 +52,3 @@ class StadiaDataset(datasets.MyDataset):
         self.data['stadium_id'] = self.data['zaak_id'] + '_' + self.data['sta_nr'].astype(int).astype(str)
         self.version += '_ids'
         self.save()
-
-
-    def add_labels(self):
-        """Add labels to the zaken dataframe."""
-        clean.lower_strings(self.data)
-        datasets.add_column(df=self.data, new_col='label', match_col='sta_oms',
-                   csv_path=os.path.join(HOME, 'Documents/woonfraude/data/aanvulling_sta_oms.csv'))
-        self.version += '_labels'
-        self.save()

@@ -1,15 +1,14 @@
 ####################################################################################################
-"""
-dashboard_helper.py
-
-This script provides the following functions, which can be used when implementing a dashboard:
-
-- Creating a selection of the most recent housing fraud signals.
-- Loading a pre-trained prediction model.
-- Performing inference on a list of housing fraud signals, using a pre-trained ML model.
-
-Written by Swaan Dekkers & Thomas Jongstra
-"""
+# dashboard_helper.py                                                                              #
+#                                                                                                  #
+# This script provides the following functions to the dashboard,                                   #
+# hence creating a link between the codebase and the dashboard:                                    #
+#                                                                                                  #
+# - Creating a selection of the most recent ICTU signals.                                          #
+# - Loading a pre-trained prediction model.                                                        #
+# - Performing inference on a list of ICTU signals, using a loaded pre-trained model.              #
+#                                                                                                  #
+# Written by Swaan Dekkers & Thomas Jongstra                                                       #
 ####################################################################################################
 
 #############
@@ -40,7 +39,6 @@ from datasets import *
 # Import config file.
 import config
 
-
 ################################
 ## Dashboard helper functions ##
 ################################
@@ -57,7 +55,7 @@ def load_pre_trained_model():
     Load a pre-trained machine learning model, which can calculate the statistical
     chance of housing fraud for a list of addresses.
     """
-    model_path = os.path.join(os.path.join(PARENT_PATH, 'data'), 'best_random_forest_classifier_temp.pickle')
+    model_path = os.path.join(os.path.join(PARENT_PATH, 'data'), 'best_random_forest_regressor_temp.pickle')
     model = pickle.load(open(model_path, "rb"))
     return model
 
@@ -72,12 +70,21 @@ def get_recent_signals(zakenDataset, n=100):
 def create_signals_predictions(model, signals):
     """Create predictions for signals using a given model."""
 
-    # Remove adres_id column (should not be used for predictions).
-    signals.drop(columns=['adres_id'], inplace=True)
+    # Remove adres_id column, if it is there (should not be used for predictions).
+    try:
+        signals.drop(columns=['adres_id'], inplace=True)
+    except:
+        pass
+
     # Remove non-numeric columns.
     signals = signals._get_numeric_data()
-    # Remove columns containing only NaN values.
-    signals.drop(columns=['hoofdadres', 'begin_geldigheid'], inplace=True)
+
+    # Try to remove columns containing only NaN values.
+    try:
+        signals.drop(columns=['hoofdadres', 'begin_geldigheid'], inplace=True)
+    except:
+        pass
+
     # Create predictions.
     predictions = model.predict(signals)
     return predictions
@@ -114,23 +121,29 @@ def process_for_tableau():
     """
 
     # Create a folder structure for the papermill output.
-    now = datetime.datetime.now()
-    day_string = f'{str(now)[0:10]}'
-    output_folder = os.path.abspath(os.path.join('NOTEBOOK_PATH', 'papermill_output'))
-    output_folder_run = os.path.abspat(os.path.join(output_folder, day_string)
-    if not Path(output_folder).exists():
-        os.mkdir(f'{output_folder}')
-    if not Path(output_folder_run).exists():
-        os.mkdir(f'{output_folder_run}')
+    # now = datetime.datetime.now()
+    # day_string = f'{str(now)[0:10]}'
+    # output_folder = os.path.abspath(os.path.join('NOTEBOOK_PATH', 'papermill_output'))
+    # output_folder_run = os.path.abspat(os.path.join(output_folder, day_string)
+    # if not Path(output_folder).exists():
+    #     os.mkdir(f'{output_folder}')
+    # if not Path(output_folder_run).exists():
+    #     os.mkdir(f'{output_folder_run}')
 
-    # Run data preparation step (master_prepare.ipynb) using Papermill.
-    _ = pm.execute_notebook(os.path.abspath(os.path.join('NOTEBOOK_PATH', 'master_prepare.ipynb'),
-                            f'{output_folder_run}/master_prepare - output.ipynb')
+    # # Run data preparation step (master_prepare.ipynb) using Papermill.
+    # _ = pm.execute_notebook(os.path.abspath(os.path.join('NOTEBOOK_PATH', 'master_prepare_tableau.ipynb'),
+    #                         f'{output_folder_run}/master_prepare - output.ipynb')
 
-    # Load data & model, and create predictions.
+    # Load data & model.
     zakenDataset = load_data()
     model = load_pre_trained_model()
-    predictions = create_signals_predictions(model, zakenDataset.data)
+
+    # Get list of columns expected by model. Remove any columns in the data that do not match this list.
+    data = copy.deepcopy(zakenDataset.data)
+    data = data[model.feature_names]
+
+    # Create predictions.
+    predictions = create_signals_predictions(model, data)
     zakenDataset.data['woonfraude'] = predictions
 
     # Convert predictions to a model fitting the database.
@@ -139,8 +152,8 @@ def process_for_tableau():
     predictions_tableau =  zakenDataset.data[['adres_id', 'wvs_nr', 'fraud_prediction']]
 
     # Create a database engine.
-    # engine = create_engine(f'postgresql+psycopg2://{config.user}:{config.password}@{config.host}:{config.port}/{config.database}')
+    engine = create_engine(f'postgresql+psycopg2://{config.USER_2}:{config.PASSWORD_2}@{config.HOST_2}:{config.PORT_2}/{config.DB_2}')
 
     # Commit predictions to the database, to be used by Tableau.
-    # predictions_tableau.to_sql('bwv_jasmine', engine, schema='rve_wonen', index=False, if_exists='replace')
-    # predictions_tableau.to_sql('bwv_jasmine_history', engine, schema='rve_wonen', index=False, if_exists='append')
+    predictions_tableau.to_sql('bwv_jasmine', engine, schema='public', index=False, if_exists='replace')
+    # predictions_tableau.to_sql('bwv_jasmine_history', engine, schema='public', index=False, if_exists='append')
