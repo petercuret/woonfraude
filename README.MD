@@ -48,11 +48,18 @@ Direct in de root van de repository zitten ook enkele bestanden:
 #### Ga met de terminal de nieuwe gedownloade directory in:
     cd woonfraude
 
+#### Maak een data folder aan (bijv. woonfraude/data).
+    mkdir data
+
 #### Maak een lokale virtuele Python omgeving aan:
     virtualenv --python=$(which python3) venv
 
 #### Activeer deze virtuele omgeving (doe dit iedere keer dat je met de code werkt):
     source venv/bin/activate
+
+#### Maak environment variabelen aan die aangeven waar je woonfraude folder en je data staan (let er op dat je deze paden zelf correct zet! Als je je data folder op een andere plek hebt neergezet, pas de waarde van WOONFRAUDE_DATA_PATH dan aan!). Maak deze environment variabelen iedere keer aan als je je virtuele omgeving activeert. Je kunt ook 'venv/bin/activate' zo aanpassen dat deze environment variabelen automatisch aangemaakt worden bij het activeren van je virtuele environment (en verwijderd worden bij het deactiveren van je virtuele environment).
+    export WOONFRAUDE_PATH=$(pwd)
+    export WOONFRAUDE_DATA_PATH=$(pwd)/data
 
 #### Installeer de benodigde pakketten in deze virtuele omgeving:
     pip install requirements.txt
