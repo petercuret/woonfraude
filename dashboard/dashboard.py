@@ -22,25 +22,9 @@ https://github.com/amyoshino/Dash_Tutorial_Series (careful: this repo seems to b
 """
 ####################################################################################################
 
-##################
-## Manage Paths ##
-##################
-
-# Load environment variables.
-MAIN_PATH = os.getenv("WOONFRAUDE_PATH")
-DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
-CODEBASE_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'codebase'))
-NOTEBOOK_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'notebooks'))
-DASHBOARD_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'dashboard'))
-
-# Add system paths.
-sys.path.insert(1, CODEBASE_PATH)
-
-
-#############
-## Imports ##
-#############
-
+###########################
+## Import public modules ##
+###########################
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -59,13 +43,26 @@ from copy import deepcopy
 
 import plotly.graph_objs as go
 
-# Add the parent paths to sys.path, so our own modules on the root dir can also be imported.
-# SCRIPT_PATH = os.path.abspath(__file__)
-# SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
-# WOONFRAUDE_PATH = os.path.join(SCRIPT_DIR, os.path.pardir)
-# sys.path.append(WOONFRAUDE_PATH)
 
-# Import own modules.
+##################
+## Manage Paths ##
+##################
+
+# Load environment variables.
+MAIN_PATH = os.getenv("WOONFRAUDE_PATH")
+DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
+CODEBASE_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'codebase'))
+NOTEBOOK_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'notebooks'))
+DASHBOARD_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'dashboard'))
+
+# Add system paths.
+sys.path.insert(1, CODEBASE_PATH)
+
+
+########################
+## Import own modules ##
+########################
+
 import config
 import dashboard_helper
 

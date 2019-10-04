@@ -9,17 +9,9 @@ Written by Swaan Dekkers & Thomas Jongstra
 """
 ####################################################################################################
 
-##################
-## Manage Paths ##
-##################
-
-# Load environment variables.
-DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
-
-
-#############
-## Imports ##
-#############
+###########################
+## Import public modules ##
+###########################
 
 from pathlib import Path
 import pandas.io.sql as sqlio
@@ -31,7 +23,19 @@ import time
 import os
 import re
 
-# Import own modules.
+
+##################
+## Manage Paths ##
+##################
+
+# Load environment variables.
+DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
+
+
+########################
+## Import own modules ##
+########################
+
 import clean, datasets
 
 

@@ -11,6 +11,19 @@
 # Written by Swaan Dekkers & Thomas Jongstra                                                       #
 ####################################################################################################
 
+###########################
+## Import public modules ##
+###########################
+
+from sqlalchemy import create_engine
+import papermill as pm
+import datetime
+import pickle
+import copy
+import sys
+import os
+
+
 ##################
 ## Manage Paths ##
 ##################
@@ -26,33 +39,13 @@ DASHBOARD_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'dashboard'))
 sys.path.insert(1, CODEBASE_PATH)
 
 
-#############
-## Imports ##
-#############
+########################
+## Import own modules ##
+########################
 
-from sqlalchemy import create_engine
-import papermill as pm
-import datetime
-import pickle
-import copy
-import sys
-import os
-
-# Add the parent paths to sys.path, so our own modules on the root dir can also be imported.
-# SCRIPT_PATH = os.path.abspath(__file__)
-# SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
-# WOONFRAUDE_PATH = os.path.abspath(os.path.join(SCRIPT_DIR, os.path.pardir))
-# CODEBASE_PATH = os.path.abspath(os.path.join(WOONFRAUDE_PATH, 'codebase'))
-# NOTEBOOK_PATH = os.path.abspath(os.path.join(WOONFRAUDE_PATH, 'notebooks'))
-# sys.path.append(WOONFRAUDE_PATH)
-# sys.path.append(CODEBASE_PATH)
-# sys.path.append(NOTEBOOK_PATH)
-
-# Import own modules.
 from datasets import *
-
-# Import config file.
 import config
+
 
 ################################
 ## Dashboard helper functions ##

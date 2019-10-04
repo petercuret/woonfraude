@@ -9,6 +9,21 @@ Written by Swaan Dekkers & Thomas Jongstra
 """
 ####################################################################################################
 
+###########################
+## Import public modules ##
+###########################
+
+from pathlib import Path
+import pandas.io.sql as sqlio
+import pandas as pd
+import numpy as np
+import requests
+import psycopg2
+import time
+import os
+import re
+
+
 ##################
 ## Manage Paths ##
 ##################
@@ -22,21 +37,10 @@ CODEBASE_PATH = os.path.abspath(os.path.join(MAIN_PATH, 'codebase'))
 sys.path.insert(1, CODEBASE_PATH)
 
 
-#############
-## Imports ##
-#############
+########################
+## Import own modules ##
+########################
 
-from pathlib import Path
-import pandas.io.sql as sqlio
-import pandas as pd
-import numpy as np
-import requests
-import psycopg2
-import time
-import os
-import re
-
-# Import own modules.
 import config, clean
 
 
