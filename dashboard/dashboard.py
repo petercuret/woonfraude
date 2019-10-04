@@ -22,6 +22,21 @@ https://github.com/amyoshino/Dash_Tutorial_Series (careful: this repo seems to b
 """
 ####################################################################################################
 
+##################
+## Manage Paths ##
+##################
+
+# Load environment variables.
+MAIN_PATH = os.getenv("WOONFRAUDE_PATH")
+DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
+CODEBASE_PATH = os.abspath(os.join(MAIN_PATH, 'codebase'))
+NOTEBOOK_PATH = os.abspath(os.join(MAIN_PATH, 'notebooks'))
+DASHBOARD_PATH = os.abspath(os.join(MAIN_PATH, 'dashboard'))
+
+# Add system paths.
+sys.path.insert(1, CODEBASE_PATH)
+
+
 #############
 ## Imports ##
 #############
@@ -45,10 +60,10 @@ from copy import deepcopy
 import plotly.graph_objs as go
 
 # Add the parent paths to sys.path, so our own modules on the root dir can also be imported.
-SCRIPT_PATH = os.path.abspath(__file__)
-SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
-PARENT_PATH = os.path.join(SCRIPT_DIR, os.path.pardir)
-sys.path.append(PARENT_PATH)
+# SCRIPT_PATH = os.path.abspath(__file__)
+# SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
+# WOONFRAUDE_PATH = os.path.join(SCRIPT_DIR, os.path.pardir)
+# sys.path.append(WOONFRAUDE_PATH)
 
 # Import own modules.
 import config
@@ -64,11 +79,11 @@ try:
     df = dashboard_helper.process_recent_signals()
     print('Succesfully created prediction for recent signals.')
 except:
-    df = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
+    df = pd.read_csv(os.path.join(DASHBOARD_PATH, 'mockup_dataset.csv'), sep=';', skipinitialspace=True)
     print('Cannot generate predictions from the data. Falling back to using the mockup_dataset.csv')
 
-df_proactief = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_proactief.csv'), sep=';', skipinitialspace=True)
-df_unsupervised = pd.read_csv(os.path.join(SCRIPT_DIR, 'mockup_dataset_unsupervised.csv'), sep=';', skipinitialspace=True)
+df_proactief = pd.read_csv(os.path.join(DASHBOARD_PATH, 'mockup_dataset_proactief.csv'), sep=';', skipinitialspace=True)
+df_unsupervised = pd.read_csv(os.path.join(DASHBOARD_PATH, 'mockup_dataset_unsupervised.csv'), sep=';', skipinitialspace=True)
 
 
 #########################

@@ -11,6 +11,21 @@
 # Written by Swaan Dekkers & Thomas Jongstra                                                       #
 ####################################################################################################
 
+##################
+## Manage Paths ##
+##################
+
+# Load environment variables.
+MAIN_PATH = os.getenv("WOONFRAUDE_PATH")
+DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
+CODEBASE_PATH = os.abspath(os.join(MAIN_PATH, 'codebase'))
+NOTEBOOK_PATH = os.abspath(os.join(MAIN_PATH, 'notebooks'))
+DASHBOARD_PATH = os.abspath(os.join(MAIN_PATH, 'dashboard'))
+
+# Add system paths.
+sys.path.insert(1, CODEBASE_PATH)
+
+
 #############
 ## Imports ##
 #############
@@ -24,14 +39,14 @@ import sys
 import os
 
 # Add the parent paths to sys.path, so our own modules on the root dir can also be imported.
-SCRIPT_PATH = os.path.abspath(__file__)
-SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
-PARENT_PATH = os.path.abspath(os.path.join(SCRIPT_DIR, os.path.pardir))
-CODEBASE_PATH = os.path.abspath(os.path.join(PARENT_PATH, 'codebase'))
-NOTEBOOK_PATH = os.path.abspath(os.path.join(PARENT_PATH, 'notebooks'))
-sys.path.append(PARENT_PATH)
-sys.path.append(CODEBASE_PATH)
-sys.path.append(NOTEBOOK_PATH)
+# SCRIPT_PATH = os.path.abspath(__file__)
+# SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
+# WOONFRAUDE_PATH = os.path.abspath(os.path.join(SCRIPT_DIR, os.path.pardir))
+# CODEBASE_PATH = os.path.abspath(os.path.join(WOONFRAUDE_PATH, 'codebase'))
+# NOTEBOOK_PATH = os.path.abspath(os.path.join(WOONFRAUDE_PATH, 'notebooks'))
+# sys.path.append(WOONFRAUDE_PATH)
+# sys.path.append(CODEBASE_PATH)
+# sys.path.append(NOTEBOOK_PATH)
 
 # Import own modules.
 from datasets import *
@@ -55,7 +70,7 @@ def load_pre_trained_model():
     Load a pre-trained machine learning model, which can calculate the statistical
     chance of housing fraud for a list of addresses.
     """
-    model_path = os.path.join(os.path.join(PARENT_PATH, 'data'), 'best_random_forest_regressor_temp.pickle')
+    model_path = os.path.join(WOONFRAUDE_DATA_PATH, 'best_random_forest_regressor_temp.pickle')
     model = pickle.load(open(model_path, "rb"))
     return model
 
@@ -107,11 +122,9 @@ def process_recent_signals():
 def process_for_tableau():
     """
     !!! TEMPORARY SOLUTION FOR PILOT !!!
-
     Create a list of prediction values for ALL data points, and write the results to a databsae.
     Tableau will be able to look at the results in this database. However, only a small selection
     of the data points will be used by Tableau (the open cases).
-
     The predictions for already closed cases are not needed (and since the model is trained
     on these cases, the predictions might make the model look better than it actually is).
     Nevertheless, since it is hard to make a selection of all open cases beforehand,
@@ -121,18 +134,18 @@ def process_for_tableau():
     """
 
     # Create a folder structure for the papermill output.
-    # now = datetime.datetime.now()
-    # day_string = f'{str(now)[0:10]}'
-    # output_folder = os.path.abspath(os.path.join('NOTEBOOK_PATH', 'papermill_output'))
-    # output_folder_run = os.path.abspat(os.path.join(output_folder, day_string)
-    # if not Path(output_folder).exists():
-    #     os.mkdir(f'{output_folder}')
-    # if not Path(output_folder_run).exists():
-    #     os.mkdir(f'{output_folder_run}')
+    now = datetime.datetime.now()
+    day_string = f'{str(now)[0:10]}'
+    output_folder = os.path.abspath(os.path.join(NOTEBOOK_PATH, 'papermill_output'))
+    output_folder_run = os.path.abspath(os.path.join(output_folder, day_string))
+    if not Path(output_folder).exists():
+        os.mkdir(f'{output_folder}')
+    if not Path(output_folder_run).exists():
+        os.mkdir(f'{output_folder_run}')
 
-    # # Run data preparation step (master_prepare.ipynb) using Papermill.
-    # _ = pm.execute_notebook(os.path.abspath(os.path.join('NOTEBOOK_PATH', 'master_prepare_tableau.ipynb'),
-    #                         f'{output_folder_run}/master_prepare - output.ipynb')
+    # Run data preparation step (master_prepare.ipynb) using Papermill.
+    _ = pm.execute_notebook(os.path.abspath(os.path.join(NOTEBOOK_PATH, 'master_prepare_tableau.ipynb')),
+                            f'{output_folder_run}/master_prepare - output.ipynb')
 
     # Load data & model.
     zakenDataset = load_data()
@@ -147,8 +160,8 @@ def process_for_tableau():
     zakenDataset.data['woonfraude'] = predictions
 
     # Convert predictions to a model fitting the database.
-    zakenDataset.data['wvs_nr'] = zakenDataset.zaak_id.apply(lambda x: x.split('_')[1])
-    zakenDataset.data.rename({'woonfraude': 'fraud_prediction'})
+    zakenDataset.data['wvs_nr'] = zakenDataset.data.zaak_id.apply(lambda x: x.split('_')[1])
+    zakenDataset.data.rename(columns={'woonfraude': 'fraud_prediction'}, inplace=True)
     predictions_tableau =  zakenDataset.data[['adres_id', 'wvs_nr', 'fraud_prediction']]
 
     # Create a database engine.

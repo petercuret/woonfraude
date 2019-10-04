@@ -26,12 +26,6 @@ import re
 # Import own modules.
 import datasets
 
-# Define HOME and DATA_PATH on a global level.
-HOME = Path.home()  # Home path for old VAO.
-# USERNAME = os.path.basename(HOME)
-# HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
-DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
-
 
 ######################
 ## BagDataset class ##

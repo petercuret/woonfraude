@@ -9,6 +9,19 @@ Written by Swaan Dekkers & Thomas Jongstra
 """
 ####################################################################################################
 
+##################
+## Manage Paths ##
+##################
+
+# Load environment variables.
+MAIN_PATH = os.getenv("WOONFRAUDE_PATH")
+DATA_PATH = os.getenv("WOONFRAUDE_DATA_PATH")
+CODEBASE_PATH = os.abspath(os.join(MAIN_PATH, 'codebase'))
+
+# Add system paths.
+sys.path.insert(1, CODEBASE_PATH)
+
+
 #############
 ## Imports ##
 #############
@@ -25,12 +38,6 @@ import re
 
 # Import own modules.
 import config, clean
-
-# Define HOME and DATA_PATH on a global level.
-HOME = Path.home()  # Home path for old VAO.
-# USERNAME = os.path.basename(HOME)
-# HOME = os.path.join('/data', USERNAME)  # Set home for new VAO.
-DATA_PATH = os.path.join(HOME, 'Documents/woonfraude/data/')
 
 
 ###################
