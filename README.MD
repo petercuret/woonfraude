@@ -55,7 +55,7 @@ Direct in de root van de repository zitten ook enkele bestanden:
     source venv/bin/activate
 
 #### Installeer de benodigde pakketten in deze virtuele omgeving:
-    pip install requirements.txt
+    pip install -r requirements.txt
 
 Nu zou je klaar moeten zijn om met dit pakket te werken.
 
